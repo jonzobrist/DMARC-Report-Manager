@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# DMARC Report Manager - Restart Script
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+echo "Restarting DMARC Report Manager..."
+
+"${PROJECT_ROOT}/bin/stop"
+sleep 1
+"${PROJECT_ROOT}/bin/start"

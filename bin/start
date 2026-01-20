@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# DMARC Report Manager - Start Script
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${PROJECT_ROOT}" || exit 1
+
+RUN_DIR="${PROJECT_ROOT}/.run"
+mkdir -p "${RUN_DIR}"
+
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo "Starting DMARC Report Manager services..."
+
+# Check dependencies
+if ! command -v uv &> /dev/null; then
+    echo -e "${RED}Error: 'uv' is not installed or not in PATH.${NC}"
+    exit 1
+fi
+if ! command -v pnpm &> /dev/null; then
+    echo -e "${RED}Error: 'pnpm' is not installed or not in PATH.${NC}"
+    exit 1
+fi
+
+# Start Backend
+if [ -d "backend" ]; then
+    if [ -f "${RUN_DIR}/backend.pid" ] && kill -0 $(cat "${RUN_DIR}/backend.pid") 2>/dev/null; then
+        echo -e "${GREEN}Backend is already running (PID: $(cat "${RUN_DIR}/backend.pid"))${NC}"
+    else
+        echo "Starting Backend API..."
+        nohup uv run uvicorn backend.web.api:app --reload --port 8000 > "${RUN_DIR}/backend.log" 2>&1 &
+        echo ${!} > "${RUN_DIR}/backend.pid"
+        echo -e "${GREEN}Backend started (PID: $(cat "${RUN_DIR}/backend.pid"))${NC}"
+    fi
+else
+    echo -e "${RED}Error: 'backend' directory not found. Cannot start Backend API.${NC}"
+fi
+
+# Start Frontend
+if [ -d "frontend" ]; then
+    if [ ! -f "frontend/package.json" ]; then
+        echo -e "${RED}Error: 'frontend/package.json' not found. Cannot start Frontend Web App.${NC}"
+    elif [ -f "${RUN_DIR}/frontend.pid" ] && kill -0 $(cat "${RUN_DIR}/frontend.pid") 2>/dev/null; then
+        echo -e "${GREEN}Frontend is already running (PID: $(cat "${RUN_DIR}/frontend.pid"))${NC}"
+    else
+        echo "Starting Frontend Web App..."
+        cd frontend || exit 1
+        nohup pnpm dev > "${RUN_DIR}/frontend.log" 2>&1 &
+        echo ${!} > "${RUN_DIR}/frontend.pid"
+        echo -e "${GREEN}Frontend started (PID: $(cat "${RUN_DIR}/frontend.pid"))${NC}"
+        cd ..
+    fi
+else
+    echo -e "${RED}Error: 'frontend' directory not found. Cannot start Frontend Web App.${NC}"
+fi
+
+echo "Logs are available in ${RUN_DIR}"

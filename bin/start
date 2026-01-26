@@ -58,3 +58,7 @@ else
 fi
 
 echo "Logs are available in ${RUN_DIR}"
+echo ""
+echo "Services are running:"
+echo "- Backend API:  http://localhost:8000"
+echo "- Frontend App: http://localhost:5173"

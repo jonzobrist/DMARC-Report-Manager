@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+# report-summary: Show aggregated DMARC report statistics with optional filters.
+# Usage: ./report-summary [--domain DOMAIN] [--start YYYY-MM-DD] [--end YYYY-MM-DD] [-d DAYS]
+#   --domain DOMAIN   Filter stats for a specific domain.
+#   --start DATE      Start date (inclusive) in ISO format.
+#   --end DATE        End date (inclusive) in ISO format.
+#   -d DAYS           Relative number of days back from today (overrides --start/--end).
+# All arguments are optional. By default it shows stats for the last 30 days.
+
+set -euo pipefail
+
+API_STATS="http://localhost:8000/api/stats"
+API_REPORTS="http://localhost:8000/api/reports"
+
+# Default values
+DAYS=30
+START=""
+END=""
+DOMAIN=""
+
+print_usage() {
+  echo "Usage: $0 [--domain DOMAIN] [--start YYYY-MM-DD] [--end YYYY-MM-DD] [-d DAYS]"
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -d)
+      DAYS="$2"
+      shift 2
+      ;;
+    --domain)
+      DOMAIN="$2"
+      shift 2
+      ;;
+    --start)
+      START="$2"
+      shift 2
+      ;;
+    --end)
+      END="$2"
+      shift 2
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      print_usage
+      exit 1
+      ;;
+  esac
+done
+
+# Compute timestamps
+if [[ -n "$DAYS" ]]; then
+  now=$(date -u +%s)
+  start_ts=$(( now - DAYS * 86400 ))
+  end_ts=$now
+else
+  # If explicit dates provided, convert to timestamps (UTC)
+  if [[ -n "$START" && -n "$END" ]]; then
+    start_ts=$(date -u -d "$START" +%s)
+    end_ts=$(date -u -d "$END" +%s)
+  else
+    # fallback to default 30 days
+    now=$(date -u +%s)
+    start_ts=$(( now - 30 * 86400 ))
+    end_ts=$now
+  fi
+fi
+
+# Fetch aggregated stats
+stats=$(curl -s "${API_STATS}?start=${start_ts}&end=${end_ts}")
+
+echo "=== Aggregated Stats ($(date -u -d @${start_ts} +%Y-%m-%d) to $(date -u -d @${end_ts} +%Y-%m-%d)) ==="
+
+echo "Total Reports: $(echo "$stats" | jq '.total_reports')"
+
+echo "Total Volume : $(echo "$stats" | jq '.total_volume')"
+
+echo "Disposition Breakdown:"
+
+echo "$stats" | jq '.disposition_stats'
+
+# If domain filter is requested, fetch domain‑specific recent activity and summarize
+if [[ -n "$DOMAIN" ]]; then
+  echo "\n=== Domain Specific Summary for '${DOMAIN}' ==="
+  # Use reports endpoint with domain filter (pagination not needed for small sets)
+  query="?page=1&limit=1000&domain=$(printf '%s' "$DOMAIN" | jq -s -R -r @uri)"
+  domain_reports=$(curl -s "${API_REPORTS}${query}")
+  count=$(echo "$domain_reports" | jq '.total')
+  echo "Reports matching domain: $count"
+  # Show total volume for this domain by summing recent_activity volumes (if present)
+  volume=$(echo "$domain_reports" | jq '[.items[].total_count] | add')
+  echo "Total Volume for domain: ${volume:-0}"
+fi

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+# import-dmarc: Upload DMARC report files to the DMARC Report Manager backend.
+# Usage: ./import-dmarc <file-or-directory> [additional files...]
+# If a directory is provided, all files inside it (non-recursive) will be uploaded.
+# The script uses the backend API endpoint /api/upload (POST multipart/form-data).
+# Ensure the backend is running (default http://localhost:8000).
+
+set -euo pipefail
+
+API_URL="http://localhost:8000/api/upload"
+
+print_usage() {
+  echo "Usage: $0 <path> [more paths...]"
+  echo "Each path can be a file or a directory. Directories are scanned for files (non-recursive)."
+}
+
+if [[ $# -lt 1 ]]; then
+  echo "Error: No files or directories specified."
+  print_usage
+  exit 1
+fi
+
+upload_file() {
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    echo "Skipping '$file': not a regular file"
+    return
+  fi
+  echo "Uploading '$file'..."
+  # Use curl to POST the file. -F sends multipart/form-data.
+  response=$(curl -s -w "%{http_code}" -F "files=@${file}" "$API_URL")
+  http_code="${response: -3}"
+  body="${response:0:${#response}-3}"
+  if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
+    echo "Success: $file uploaded."
+  else
+    echo "Error uploading $file (HTTP $http_code): $body"
+  fi
+}
+
+for path in "$@"; do
+  if [[ -d "$path" ]]; then
+    # Iterate over files in directory (non-recursive)
+    for f in "$path"/*; do
+      [[ -e "$f" ]] || continue
+      upload_file "$f"
+    done
+  else
+    upload_file "$path"
+  fi
+done

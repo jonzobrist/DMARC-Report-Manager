@@ -1,0 +1,160 @@
+import sqlite3
+import json
+import os
+from pathlib import Path
+
+DB_PATH = os.environ.get('DB_PATH', 'dmarc_reports.db')
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db()
+    c = conn.cursor()
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id TEXT UNIQUE,
+            org_name TEXT,
+            date_begin INTEGER,
+            date_end INTEGER,
+            domain TEXT,
+            policy_published TEXT, -- JSON blob
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id INTEGER,
+            source_ip TEXT,
+            count INTEGER,
+            disposition TEXT,
+            dkim TEXT,
+            spf TEXT,
+            FOREIGN KEY(report_id) REFERENCES reports(id)
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+def save_report(parsed_data):
+    conn = get_db()
+    c = conn.cursor()
+    
+    meta = parsed_data['metadata']
+    policy = parsed_data['policy']
+    
+    # Check if report already exists
+    c.execute("SELECT id FROM reports WHERE report_id = ?", (meta['report_id'],))
+    existing = c.fetchone()
+    if existing:
+        conn.close()
+        return existing['id'] # Already saved
+    
+    c.execute('''
+        INSERT INTO reports (report_id, org_name, date_begin, date_end, domain, policy_published)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (
+        meta['report_id'],
+        meta['org_name'],
+        meta['date_range_begin'],
+        meta['date_range_end'],
+        policy['domain'],
+        json.dumps(policy)
+    ))
+    
+    report_db_id = c.lastrowid
+    
+    for rec in parsed_data['records']:
+        c.execute('''
+            INSERT INTO records (report_id, source_ip, count, disposition, dkim, spf)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            report_db_id,
+            rec['source_ip'],
+            rec['count'],
+            rec['disposition'],
+            rec['dkim'],
+            rec['spf']
+        ))
+        
+    conn.commit()
+    conn.close()
+    return report_db_id
+
+def get_stats():
+    conn = get_db()
+    c = conn.cursor()
+    
+    # Total Reports
+    c.execute("SELECT COUNT(*) FROM reports")
+    total_reports = c.fetchone()[0]
+    
+    # Calculate volume and compliance
+    c.execute("SELECT SUM(count) FROM records")
+    total_volume = c.fetchone()[0] or 0
+    
+    c.execute("""
+        SELECT disposition, SUM(count) 
+        FROM records 
+        GROUP BY disposition
+    """)
+    disposition_stats = {row[0]: row[1] for row in c.fetchall()}
+    
+    # Recent activity
+    c.execute("""
+        SELECT 
+            r.id, r.org_name, r.created_at, rec.source_ip, rec.disposition 
+        FROM reports r
+        JOIN records rec ON r.id = rec.report_id
+        ORDER BY r.created_at DESC
+        LIMIT 50
+    """)
+    recent = [dict(row) for row in c.fetchall()]
+    
+    conn.close()
+    
+    return {
+        'total_reports': total_reports,
+        'total_volume': total_volume,
+        'disposition_stats': disposition_stats,
+        'recent_activity': recent # Note: This logic might need refinement for the 'Recent Reports' table which groups by report, not record
+    }
+
+def get_reports_list(limit=50):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, report_id, org_name, domain, date_end, created_at 
+        FROM reports 
+        ORDER BY date_end DESC 
+        LIMIT ?
+    """, (limit,))
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return rows
+
+def get_report_detail(id):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM reports WHERE id = ?", (id,))
+    report = c.fetchone()
+    
+    if not report:
+        conn.close()
+        return None
+        
+    c.execute("SELECT * FROM records WHERE report_id = ?", (id,))
+    records = [dict(row) for row in c.fetchall()]
+    conn.close()
+    
+    res = dict(report)
+    res['policy_published'] = json.loads(res['policy_published'])
+    res['records'] = records
+    return res

@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+# list-reports: List DMARC reports with optional filters.
+# Usage: ./list-reports [-d DAYS] [--domain DOMAIN] [--search QUERY] [--page N] [--limit N]
+#   -d DAYS        Show reports from the last N days (relative time).
+#   --domain DOMAIN  Filter by domain.
+#   --search QUERY   Search by organization name or report ID.
+#   --page N        Pagination page (default 1).
+#   --limit N       Items per page (default 50).
+
+set -euo pipefail
+
+API_URL="http://localhost:8000/api/reports"
+
+# Default values
+page=1
+limit=50
+search=""
+DOMAIN=""
+DAYS=""
+
+print_usage() {
+  echo "Usage: $0 [-d DAYS] [--domain DOMAIN] [--search QUERY] [--page N] [--limit N]"
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -d)
+      DAYS="$2"
+      shift 2
+      ;;
+    --domain)
+      DOMAIN="$2"
+      shift 2
+      ;;
+    --search)
+      search="$2"
+      shift 2
+      ;;
+    --page)
+      page="$2"
+      shift 2
+      ;;
+    --limit)
+      limit="$2"
+      shift 2
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      print_usage
+      exit 1
+      ;;
+  esac
+done
+
+# If relative days provided, compute start/end timestamps and use the stats endpoint for filtering.
+if [[ -n "$DAYS" ]]; then
+  now=$(date -u +%s)
+  start=$(( now - DAYS * 86400 ))
+  # Use the stats endpoint to get report IDs in the period, then list them.
+  stats_url="http://localhost:8000/api/stats?start=${start}&end=${now}"
+  ids=$(curl -s "$stats_url" | jq -r '.recent_activity[].id' | paste -sd, -)
+  if [[ -z "$ids" ]]; then
+    echo "No reports found in the last $DAYS days."
+    exit 0
+  fi
+  # Append ids as a search filter (backend supports generic search on org_name/report_id)
+  search="$ids"
+fi
+
+# Build query string
+query="?page=${page}&limit=${limit}"
+if [[ -n "$search" ]]; then
+  query+="&search=$(printf '%s' "$search" | jq -s -R -r @uri)"
+fi
+if [[ -n "$DOMAIN" ]]; then
+  query+="&domain=$(printf '%s' "$DOMAIN" | jq -s -R -r @uri)"
+fi
+
+url="${API_URL}${query}"
+
+echo "Fetching reports from $url"
+curl -s "$url" | jq '.'

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+# get-report: Retrieve a specific DMARC report by its unique ID.
+# Usage: ./get-report [--id REPORT_ID]
+# If --id is omitted, the script will prompt the user to enter an ID.
+# The backend endpoint is /api/reports/{id}.
+
+set -euo pipefail
+
+API_BASE="http://localhost:8000/api/reports"
+
+print_usage() {
+  echo "Usage: $0 [--id REPORT_ID]"
+}
+
+# Parse arguments
+REPORT_ID=""
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --id)
+      REPORT_ID="$2"
+      shift 2
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      print_usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$REPORT_ID" ]]; then
+  read -p "Enter report ID: " REPORT_ID
+fi
+
+url="${API_BASE}/${REPORT_ID}"
+
+echo "Fetching report $REPORT_ID from $url"
+response=$(curl -s -w "%{http_code}" "$url")
+http_code="${response: -3}"
+body="${response:0:${#response}-3}"
+
+if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
+  echo "$body" | jq '.'
+else
+  echo "Error fetching report (HTTP $http_code): $body"
+  exit 1
+fi

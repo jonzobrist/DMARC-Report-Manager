@@ -122,10 +122,14 @@ const Dashboard = () => {
     ];
     const COLORS = ['#22c55e', '#ef4444'];
 
+    const totalPass = disposition_stats?.none || 0;
+    const passRate = total_volume > 0 ? ((totalPass / total_volume) * 100).toFixed(1) : 0;
+
     const summaryStats = [
         { title: 'Total Reports', value: total_reports.toLocaleString(), icon: Mail, color: '#3b82f6' },
-        { title: 'Total Volume', value: total_volume.toLocaleString(), icon: ShieldCheck, color: '#22c55e' },
+        { title: 'Total Volume', value: total_volume.toLocaleString(), icon: Database, color: '#10b981' },
         { title: 'Failures', value: ((disposition_stats?.quarantine || 0) + (disposition_stats?.reject || 0)).toLocaleString(), icon: ShieldAlert, color: '#ef4444' },
+        { title: 'Pass Rate', value: `${passRate}%`, icon: ShieldCheck, color: '#6366f1' },
     ];
 
     return (
@@ -176,12 +180,13 @@ const Dashboard = () => {
                     <div key={index} className="stat-card">
                         <div className="stat-top">
                             <div className="stat-icon" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
-                                <stat.icon size={20} />
+                                <stat.icon size={22} />
                             </div>
-                            <button className="stat-more"><MoreHorizontal size={16} /></button>
                         </div>
-                        <div className="stat-value">{stat.value}</div>
-                        <div className="stat-label">{stat.title}</div>
+                        <div className="stat-content">
+                            <div className="stat-value">{stat.value}</div>
+                            <div className="stat-label">{stat.title}</div>
+                        </div>
                     </div>
                 ))}
             </div>

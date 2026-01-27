@@ -18,6 +18,15 @@ const Layout = ({ children }) => {
         Cookies.set('sidebar_state', newState, { expires: 365 });
     };
 
+    const [version, setVersion] = useState('');
+
+    useEffect(() => {
+        fetch('http://localhost:8000/api/version')
+            .then(res => res.json())
+            .then(data => setVersion(data.version))
+            .catch(err => console.error("Failed to fetch version", err));
+    }, []);
+
     const isActive = (path) => {
         return location.pathname === path ? 'active' : '';
     };
@@ -51,7 +60,6 @@ const Layout = ({ children }) => {
                         <Globe size={20} />
                         {isSidebarOpen && <span className="nav-text">Domains</span>}
                     </Link>
-
                     <div className="nav-spacer"></div>
                     <Link to="#" className={`nav-item ${isActive('/settings')}`}>
                         <Settings size={20} />
@@ -59,16 +67,24 @@ const Layout = ({ children }) => {
                     </Link>
                 </nav>
 
-                <div className="user-profile">
-                    <div className="avatar">JD</div>
+                <div className="sidebar-footer">
+                    <div className="user-profile">
+                        <div className="avatar">JD</div>
+                        {isSidebarOpen && (
+                            <div className="user-info">
+                                <span className="user-name">John Doe</span>
+                                <span className="user-role">Admin</span>
+                            </div>
+                        )}
+                    </div>
                     {isSidebarOpen && (
-                        <div className="user-info">
-                            <span className="user-name">John Doe</span>
-                            <span className="user-role">Admin</span>
+                        <div className="version-info">
+                            v{version || '0.0.0'}
                         </div>
                     )}
                 </div>
             </aside>
+
 
             <main className="main-content">
                 {children}

@@ -1,14 +1,51 @@
-# Python-generated files
+# Python-generated files, some copied from https://github.com/github/gitignore/blob/main/Python.gitignore
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
+*.egg
 *.egg-info
 backend/uploads
 # Virtual environments
 .venv
 *.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
 *.pid
 *.lock
 dmarc_reports.db
+.DS_Store
+# C extensions
+*.so
+# Flask stuff:
+instance/
+.webassets-cache
+# Scrapy stuff:
+.scrapy
+# Sphinx documentation
+docs/_build/
+# PyBuilder
+.pybuilder/
+target/
+# Jupyter Notebook
+.ipynb_checkpoints
+# IPython
+profile_default/
+ipython_config.py
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+# Pyre type checker
+.pyre/
+# pytype static type analyzer
+.pytype/
+# Cython debug symbols
+cython_debug/

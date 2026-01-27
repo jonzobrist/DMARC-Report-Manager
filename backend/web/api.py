@@ -39,6 +39,15 @@ async def startup_event():
 async def root():
     return {"message": "DMARC Report Manager Backend is running"}
 
+@app.get("/api/version")
+async def get_version():
+    try:
+        with open("version.txt", "r") as f:
+            return {"version": f.read().strip()}
+    except Exception:
+        return {"version": "0.0.0"}
+
+
 @app.post("/api/upload")
 async def upload_files(files: List[UploadFile] = File(...), background_tasks: BackgroundTasks = None):
     uploaded_files = []

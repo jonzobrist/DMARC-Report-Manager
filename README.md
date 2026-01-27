@@ -18,6 +18,8 @@
 - **Frontend**: React (Vite, Recharts, Lucide, Tailwind-free CSS)
 - **Package Management**: `uv` (Python) and `pnpm` (Node.js)
 
+## Screenshot
+![](screenshots/DMARC-Manager-Dashboard-screenshot.png)
 ## Getting Started
 
 ### Prerequisites

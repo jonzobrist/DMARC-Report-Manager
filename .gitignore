@@ -5,6 +5,8 @@ build/
 dist/
 wheels/
 *.egg-info
-
+backend/uploads
 # Virtual environments
 .venv
+*.log
+dmarc_reports.db

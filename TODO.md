@@ -18,6 +18,8 @@
 - [x] Bulk report deletion (Flush Reports) in Web UI
 - [x] Domain List page (filter reports by domain)
 - [x] Enhanced filtering and search UI
+- [x] Security Fixes (python-multipart & esbuild)
+
 
 - [ ] Responsive design for mobile devices
 - [ ] Dark mode support

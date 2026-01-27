@@ -9,4 +9,5 @@ backend/uploads
 # Virtual environments
 .venv
 *.log
+*.pid
 dmarc_reports.db

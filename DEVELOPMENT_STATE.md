@@ -20,7 +20,9 @@ DMARC Report Manager is a self-hosted tool for parsing, analyzing, and visualizi
     - `start`, `stop`, `restart`: Convenience scripts for service management.
 
 ## Recently Completed
+- [x] Security Hardening: Upgraded `python-multipart` and applied `esbuild` overrides to mitigate reported vulnerabilities.
 - [x] **Domain tracking & filtering**: Added a dedicated "Domain List" page with aggregated pass/fail stats and deep-linking to filtered reports.
+
 - [x] **Flexible Identification**: Updated `get-report` (CLI and API) to support retrieval by either internal numerical ID or the unique `report_id` string.
 
 - [x] **Bulk Deletion**: Implemented `DELETE /api/reports` endpoint and associated DB logic to filter by domain, org, or date range.

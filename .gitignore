@@ -10,4 +10,5 @@ backend/uploads
 .venv
 *.log
 *.pid
+*.lock
 dmarc_reports.db

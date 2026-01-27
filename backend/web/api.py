@@ -13,7 +13,7 @@ import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from backend.dmarc_lib.parser import parse_report
-from backend.dmarc_lib.db import init_db, save_report, get_stats, get_reports_list, get_report_detail, delete_reports
+from backend.dmarc_lib.db import init_db, save_report, get_stats, get_reports_list, get_report_detail, delete_reports, get_domain_stats
 
 app = FastAPI(title="DMARC Report Manager")
 
@@ -111,8 +111,9 @@ async def stats(start: Optional[int] = None, end: Optional[int] = None):
     return get_stats(start_date=start, end_date=end)
 
 @app.get("/api/reports")
-async def reports_list(page: int = 1, limit: int = 50, search: Optional[str] = None):
-    return get_reports_list(page=page, page_size=limit, search=search)
+async def reports_list(page: int = 1, limit: int = 50, search: Optional[str] = None, domain: Optional[str] = None):
+    return get_reports_list(page=page, page_size=limit, search=search, domain=domain)
+
 
 @app.get("/api/reports/{id}")
 async def report_detail(id: str):
@@ -131,5 +132,9 @@ async def delete_reports_endpoint(start: Optional[int] = None, end: Optional[int
     """
     deleted = delete_reports(start_date=start, end_date=end, domain=domain, org_name=org_name, days=days)
     return {"deleted": deleted}
+@app.get("/api/domains")
+async def domains_list():
+    """Get aggregated stats for all unique domains."""
+    return get_domain_stats()
 
 

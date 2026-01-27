@@ -47,10 +47,11 @@ const Layout = ({ children }) => {
                         <Database size={20} />
                         {isSidebarOpen && <span className="nav-text">Files</span>}
                     </Link>
-                    <Link to="#" className={`nav-item ${isActive('/domains')}`}>
+                    <Link to="/domains" className={`nav-item ${isActive('/domains')}`}>
                         <Globe size={20} />
                         {isSidebarOpen && <span className="nav-text">Domains</span>}
                     </Link>
+
                     <div className="nav-spacer"></div>
                     <Link to="#" className={`nav-item ${isActive('/settings')}`}>
                         <Settings size={20} />

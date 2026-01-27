@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FileText, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { FileText, Search, ChevronLeft, ChevronRight, Eye, X } from 'lucide-react';
 
 const ReportsList = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const domainFilter = searchParams.get('domain');
+
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -18,6 +21,7 @@ const ReportsList = () => {
                 limit: 20, // 20 per page
             });
             if (search) params.append('search', search);
+            if (domainFilter) params.append('domain', domainFilter);
 
             const res = await fetch(`http://localhost:8000/api/reports?${params}`);
             if (!res.ok) throw new Error("Failed to fetch reports");
@@ -38,14 +42,32 @@ const ReportsList = () => {
             fetchReports();
         }, 300);
         return () => clearTimeout(timeout);
-    }, [page, search]);
+    }, [page, search, domainFilter]);
+
+    const clearDomainFilter = () => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('domain');
+        setSearchParams(newParams);
+        setPage(1);
+    };
 
     return (
         <div className="dashboard-content">
             <header className="content-header">
                 <div>
                     <h1>DMARC Reports</h1>
-                    <p>All processed DMARC reports</p>
+                    <p>
+                        {domainFilter ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                Filtering by domain: <strong className="text-primary">{domainFilter}</strong>
+                                <button className="btn-icon-sm" onClick={clearDomainFilter} title="Clear domain filter">
+                                    <X size={14} />
+                                </button>
+                            </span>
+                        ) : (
+                            "All processed DMARC reports"
+                        )}
+                    </p>
                 </div>
                 <div style={{ position: 'relative' }}>
                     <Search size={18} className="text-muted" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
@@ -65,6 +87,7 @@ const ReportsList = () => {
                     />
                 </div>
             </header>
+
 
             <div className="card">
                 <table className="data-table">

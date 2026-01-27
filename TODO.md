@@ -16,8 +16,9 @@
 - [x] File Manager component for uploading reports
 - [x] Compliance pie chart visualization
 - [x] Bulk report deletion (Flush Reports) in Web UI
-- [ ] Domain List page (filter reports by domain)
-- [ ] Enhanced filtering and search UI
+- [x] Domain List page (filter reports by domain)
+- [x] Enhanced filtering and search UI
+
 - [ ] Responsive design for mobile devices
 - [ ] Dark mode support
 - [ ] End-to-end tests (Cypress or Playwright)

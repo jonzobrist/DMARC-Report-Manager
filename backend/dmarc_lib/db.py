@@ -318,4 +318,26 @@ def delete_reports(start_date=None, end_date=None, domain=None, org_name=None, d
     deleted = c.rowcount
     conn.commit()
     conn.close()
-    return deleted
+def get_domain_stats():
+    """Returns aggregated stats (Pass/Quarantine/Reject) for each unique domain."""
+    conn = get_db()
+    c = conn.cursor()
+    
+    c.execute("""
+        SELECT 
+            r.domain,
+            COUNT(DISTINCT r.id) as report_count,
+            MAX(r.date_end) as last_seen,
+            SUM(rec.count) as total_volume,
+            SUM(CASE WHEN COALESCE(rec.disposition, 'none') = 'none' THEN rec.count ELSE 0 END) as pass_count,
+            SUM(CASE WHEN COALESCE(rec.disposition, 'none') = 'quarantine' THEN rec.count ELSE 0 END) as quarantine_count,
+            SUM(CASE WHEN COALESCE(rec.disposition, 'none') = 'reject' THEN rec.count ELSE 0 END) as reject_count
+        FROM reports r
+        JOIN records rec ON r.id = rec.report_id
+        GROUP BY r.domain
+        ORDER BY report_count DESC
+    """)
+    
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return rows

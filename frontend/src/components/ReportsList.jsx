@@ -73,9 +73,10 @@ const ReportsList = () => {
                     <Search size={18} className="text-muted" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                         type="text"
-                        placeholder="Search Organization or ID..."
+                        placeholder="Search Org, ID, or Domain..."
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+
                         style={{
                             padding: '0.5rem 0.5rem 0.5rem 2.5rem',
                             borderRadius: '8px',

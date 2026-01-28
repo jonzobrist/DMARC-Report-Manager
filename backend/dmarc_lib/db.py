@@ -196,18 +196,20 @@ def get_reports_list(page=1, page_size=50, search=None, domain=None):
     conn = get_db()
     c = conn.cursor()
     
-    query = "SELECT id, report_id, org_name, domain, date_end, created_at FROM reports"
-    count_query = "SELECT COUNT(*) FROM reports"
+    query = "SELECT r.id, r.report_id, r.org_name, r.domain, r.date_end, r.created_at FROM reports r"
+    count_query = "SELECT COUNT(*) FROM reports r"
+
     conditions = []
     params = []
     
     if search:
-        conditions.append("(org_name LIKE ? OR report_id LIKE ?)")
-        params.extend([f"%{search}%", f"%{search}%"])
+        conditions.append("(r.org_name LIKE ? OR r.report_id LIKE ? OR r.domain LIKE ?)")
+        params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
         
     if domain:
-        conditions.append("domain = ?")
+        conditions.append("r.domain = ?")
         params.append(domain)
+
         
     if conditions:
         clause = " WHERE " + " AND ".join(conditions)

@@ -20,6 +20,10 @@
 
 ## Screenshot
 ![](screenshots/DMARC-Manager-Dashboard-screenshot.png)
+
+## API Documentation
+The backend provides a RESTful API for integration and automation. See [API.md](API.md) for details and usage examples.
+
 ## Getting Started
 
 ### Prerequisites

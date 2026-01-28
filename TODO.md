@@ -8,8 +8,9 @@
 - [x] Persistence of report metadata and records
 - [x] Bulk deletion endpoint (`DELETE /api/reports`)
 - [ ] Implement authentication & authorization for API
-- [ ] Write comprehensive unit tests for parsing and API
+- [x] Write comprehensive unit tests for parsing and API
 - [ ] CI pipeline for automated testing
+
 
 ## Frontend
 - [x] Interactive Dashboard with Recharts
@@ -37,12 +38,13 @@
 - [x] Current Features section added to README
 - [x] Comprehensive TODO.md checklist
 - [ ] Contribution guidelines
-- [ ] API documentation (OpenAPI spec details)
+- [x] API documentation (OpenAPI spec details)
 
 ## Testing & Verification
 - [x] Manual testing of backend endpoints via Swagger UI
 - [x] Manual testing of frontend UI in Chrome
-- [ ] Automated test suite integration
+- [x] Automated test suite integration
+
 
 
 ## Future Enhancements

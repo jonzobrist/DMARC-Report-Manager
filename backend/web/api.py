@@ -1,8 +1,9 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from typing import List, Optional
+from pydantic import BaseModel
+
 import sys
 import os
 import shutil
@@ -13,7 +14,8 @@ import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from backend.dmarc_lib.parser import parse_report
-from backend.dmarc_lib.db import init_db, save_report, get_stats, get_reports_list, get_report_detail, delete_reports, get_domain_stats
+from backend.dmarc_lib.db import init_db, save_report, get_stats, get_reports_list, get_report_detail, delete_reports, get_domain_stats, get_user_profile, update_user_profile
+
 
 app = FastAPI(title="DMARC Report Manager")
 
@@ -29,6 +31,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Pydantic models
+class UserProfile(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
 
 # Initialize DB on startup
 @app.on_event("startup")
@@ -145,5 +154,22 @@ async def delete_reports_endpoint(start: Optional[int] = None, end: Optional[int
 async def domains_list():
     """Get aggregated stats for all unique domains."""
     return get_domain_stats()
+
+@app.get("/api/user/profile")
+async def user_profile():
+    """Get the profile of the default user (id=1)."""
+    user = get_user_profile(1)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.put("/api/user/profile")
+async def update_profile(profile: UserProfile):
+    """Update the profile of the default user (id=1)."""
+    success = update_user_profile(1, profile.dict())
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update profile")
+    return {"message": "Profile updated successfully"}
+
 
 

@@ -19,13 +19,36 @@ const Layout = ({ children }) => {
     };
 
     const [version, setVersion] = useState('');
+    const [user, setUser] = useState({ first_name: 'Admin', last_name: 'User' });
+
+    const fetchUserProfile = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/user/profile');
+            if (res.ok) {
+                const data = await res.json();
+                setUser(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch user profile", err);
+        }
+    };
 
     useEffect(() => {
         fetch('http://localhost:8000/api/version')
             .then(res => res.json())
             .then(data => setVersion(data.version))
             .catch(err => console.error("Failed to fetch version", err));
+
+        fetchUserProfile();
+
+        // Listen for profile updates from Settings component
+        window.addEventListener('profileUpdated', fetchUserProfile);
+        return () => window.removeEventListener('profileUpdated', fetchUserProfile);
     }, []);
+
+    const userInitials = `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() || '??';
+    const fullName = `${user.first_name} ${user.last_name}`;
+
 
     const isActive = (path) => {
         return location.pathname === path ? 'active' : '';
@@ -61,7 +84,7 @@ const Layout = ({ children }) => {
                         {isSidebarOpen && <span className="nav-text">Domains</span>}
                     </Link>
                     <div className="nav-spacer"></div>
-                    <Link to="#" className={`nav-item ${isActive('/settings')}`}>
+                    <Link to="/settings" className={`nav-item ${isActive('/settings')}`}>
                         <Settings size={20} />
                         {isSidebarOpen && <span className="nav-text">Settings</span>}
                     </Link>
@@ -69,14 +92,15 @@ const Layout = ({ children }) => {
 
                 <div className="sidebar-footer">
                     <div className="user-profile">
-                        <div className="avatar">JD</div>
+                        <div className="avatar">{userInitials}</div>
                         {isSidebarOpen && (
                             <div className="user-info">
-                                <span className="user-name">John Doe</span>
+                                <span className="user-name">{fullName}</span>
                                 <span className="user-role">Admin</span>
                             </div>
                         )}
                     </div>
+
                     {isSidebarOpen && (
                         <div className="version-info">
                             v{version || '0.0.0'}

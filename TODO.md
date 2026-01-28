@@ -6,8 +6,9 @@
 - [x] CLI for import, troubleshoot, etc.
 - [x] SQLite database schema for reports
 - [x] Persistence of report metadata and records
-- [x] Bulk deletion endpoint (`DELETE /api/reports`)
-- [ ] Implement authentication & authorization for API
+- [x] Bulk report deletion endpoint (`DELETE /api/reports`)
+- [x] User profile management (Settings page)
+- [ ] Implement authentication & authorization (Full Auth)
 - [x] Write comprehensive unit tests for parsing and API
 - [ ] CI pipeline for automated testing
 
@@ -19,7 +20,6 @@
 - [x] Bulk report deletion (Flush Reports) in Web UI
 - [x] Domain List page (filter reports by domain)
 - [x] Enhanced filtering and search UI
-- [x] Security Fixes (python-multipart & esbuild)
 
 
 - [ ] Responsive design for mobile devices

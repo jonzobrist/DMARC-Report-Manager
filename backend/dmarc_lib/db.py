@@ -40,8 +40,31 @@ def init_db():
         )
     ''')
     
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT,
+            last_name TEXT,
+            email TEXT UNIQUE,
+            phone TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     conn.commit()
+    _seed_default_user(conn)
     conn.close()
+
+def _seed_default_user(conn):
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM users")
+    if c.fetchone()[0] == 0:
+        c.execute('''
+            INSERT INTO users (first_name, last_name, email, phone)
+            VALUES (?, ?, ?, ?)
+        ''', ("John", "Doe", "admin@example.com", "555-0199"))
+        conn.commit()
+
 
 def save_report(parsed_data):
     conn = get_db()
@@ -343,3 +366,25 @@ def get_domain_stats():
     rows = [dict(row) for row in c.fetchall()]
     conn.close()
     return rows
+
+def get_user_profile(user_id=1):
+    """Fetch user profile details."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    user = c.fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+def update_user_profile(user_id, data):
+    """Update user profile details."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        UPDATE users 
+        SET first_name = ?, last_name = ?, email = ?, phone = ?
+        WHERE id = ?
+    ''', (data['first_name'], data['last_name'], data['email'], data['phone'], user_id))
+    conn.commit()
+    conn.close()
+    return True

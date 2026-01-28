@@ -6,6 +6,8 @@ import ReportDetail from './components/ReportDetail';
 import FileManager from './components/FileManager';
 import ReportsList from './components/ReportsList';
 import DomainList from './components/DomainList';
+import Settings from './components/Settings';
+
 
 
 function App() {
@@ -19,6 +21,7 @@ function App() {
                     <Route path="/report/:id" element={<ReportDetail />} />
 
                     <Route path="/files" element={<FileManager />} />
+                    <Route path="/settings" element={<Settings />} />
                 </Routes>
             </Layout>
         </Router>

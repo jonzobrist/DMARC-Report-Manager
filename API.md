@@ -5,6 +5,20 @@ The DMARC Report Manager provides a FastAPI-based backend for processing, storin
 ## Base URL
 The backend usually runs on `http://localhost:8000`.
 
+## Authentication
+
+Most endpoints require authentication via a **JWT (JSON Web Token)**. 
+
+1. **Obtain a token**: Send a `POST` request to `/api/login`.
+2. **Use the token**: Include it in the `Authorization` header of your requests:
+   ```http
+   Authorization: Bearer <your_access_token>
+   ```
+
+> [!NOTE]
+> Public access is limited. For example, `GET /api/stats` without a token will hide sensitive domain names.
+
+
 ## Endpoints
 
 ### 1. General Info
@@ -32,6 +46,37 @@ curl http://localhost:8000/api/version
 ```json
 {"version": "0.2.0"}
 ```
+
+---
+
+### 2. Authentication & Profile
+
+#### `POST /api/login`
+Authenticate and receive a JWT token.
+
+**Request:**
+```json
+{
+  "username": "admin",
+  "password": "yourpassword"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbG...",
+  "token_type": "bearer",
+  "user": { ... }
+}
+```
+
+#### `GET /api/user/profile`
+Get the current user's profile information. (Requires Auth)
+
+#### `PUT /api/user/profile`
+Update the current user's profile (name, email, phone, or password). (Requires Auth)
+
 
 ---
 
@@ -128,7 +173,33 @@ curl http://localhost:8000/api/domains
 
 ---
 
+### 5. User Management (Admin Only)
+
+#### `GET /api/users`
+List all user accounts in the system. (Requires Admin)
+
+#### `POST /api/users`
+Create a new user account. (Requires Admin)
+
+**Request:**
+```json
+{
+  "username": "newuser",
+  "password": "password123",
+  "first_name": "New",
+  "last_name": "User",
+  "email": "new@example.com",
+  "role": "user"
+}
+```
+
+#### `DELETE /api/users/{id}`
+Delete a user account by its numerical ID. (Requires Admin)
+
+---
+
 ## Testing API Usage
+
 
 You can use the provided testing script located in `tests/test_api.py` to verify these endpoints.
 

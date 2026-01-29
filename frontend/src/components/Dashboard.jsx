@@ -4,12 +4,16 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ShieldCheck, ShieldAlert, Mail, ArrowUpRight, ArrowDownRight, MoreHorizontal, Database, Calendar, Upload } from 'lucide-react';
 import Cookies from 'js-cookie';
 import ImportModal from './ImportModal';
+import { useAuth } from '../context/AuthContext';
+
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const { user } = useAuth();
+
 
     // Initial Date Range: Try Cookie, else default to last 7 days
     const [dateRange, setDateRange] = useState(() => {
@@ -61,7 +65,10 @@ const Dashboard = () => {
                 endTs = Math.floor(defaultEnd.getTime() / 1000);
             }
 
-            const res = await fetch(`http://localhost:8000/api/stats?start=${startTs}&end=${endTs}`);
+            const res = await fetch(`http://localhost:8000/api/stats?start=${startTs}&end=${endTs}`, {
+                headers: user ? { 'Authorization': `Bearer ${user.token}` } : {}
+            });
+
             if (!res.ok) throw new Error('Failed to fetch stats');
             const data = await res.json();
             setStats(data);
@@ -271,10 +278,11 @@ const Dashboard = () => {
                             <thead>
                                 <tr>
                                     <th>Organization</th>
-                                    <th>Domain</th>
+                                    {user && <th>Domain</th>}
                                     <th>Volume / Status</th>
                                     <th>Date</th>
                                 </tr>
+
                             </thead>
                             <tbody>
                                 {recent_activity.map(report => (
@@ -284,7 +292,8 @@ const Dashboard = () => {
                                                 {report.org_name}
                                             </Link>
                                         </td>
-                                        <td className="text-muted">{report.domain}</td>
+                                        {user && <td className="text-muted">{report.domain}</td>}
+
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem' }}>
                                                 <span className="font-medium">{report.total_count}</span>

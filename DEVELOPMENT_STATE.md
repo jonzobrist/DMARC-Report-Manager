@@ -17,11 +17,14 @@ DMARC Report Manager is a self-hosted tool for parsing, analyzing, and visualizi
     - `get-report`: Fetch detailed JSON for a single report.
     - `report-summary`: CLI stats overview with relative date support.
     - `flush-reports`: Direct DB bulk deletion tool.
+    - `reset-admin-password`: CLI utility to reset the administrator password.
     - `start`, `stop`, `restart`: Convenience scripts for service management.
 
+
 ## Recently Completed
-- [x] **User Management & Settings**: Implemented a new Settings page to manage user profile details (name, email, phone) with dynamic sidebar updates.
-- [x] Security Hardening: Upgraded `python-multipart` and applied `esbuild` overrides to mitigate reported vulnerabilities.
+- [x] **Authentication & RBAC**: Implemented a comprehensive JWT-based security system with Admin/User roles, a dedicated login flow, and fine-grained API/UI protection.
+- [x] **User Management & Settings**: Added a "User Management" dashboard for admins and profile editing for all users.
+
 
 - [x] **API Documentation & Testing**: Created [API.md](API.md) and added automated tests in `tests/test_api.py`.
 - [x] **Domain tracking & filtering**: Added a dedicated "Domain List" page with aggregated pass/fail stats and deep-linking to filtered reports.
@@ -36,10 +39,10 @@ DMARC Report Manager is a self-hosted tool for parsing, analyzing, and visualizi
 - [x] **Dashboard Reliability**: Fixed a bug where invalid date ranges caused `NaN` fetch errors by adding frontend validation.
 
 ## Next Development Steps
-1. **Domain Tracking UI**: Create a dedicated "Domain List" page to see aggregate stats per domain (currently filtering works in the background but needs a UI index).
-2. **Authentication**: Implement a simple JWT or API Key authentication layer for the FastAPI backend.
-3. **Automated Testing**: Add `pytest` for the backend parsing logic and `Playwright` or `Cypress` for the frontend.
-4. **Dark Mode / UI Polishing**: Further refine animations and add a manual dark mode toggle (currently defaults to dark).
+1. **Automated Testing**: Add `pytest` for the backend parsing logic and `Playwright` or `Cypress` for the frontend.
+2. **Dark Mode / UI Polishing**: Further refine animations and add a manual dark mode toggle (currently defaults to dark).
+3. **Advanced Filtering**: Add multi-domain selection and more granular date presets to the dashboard.
+
 
 ## Getting Started for New Developers
 1. **Backend**: `uv sync` to install dependencies. Run with `bin/start`.

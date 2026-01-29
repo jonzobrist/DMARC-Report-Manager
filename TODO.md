@@ -8,7 +8,8 @@
 - [x] Persistence of report metadata and records
 - [x] Bulk report deletion endpoint (`DELETE /api/reports`)
 - [x] User profile management (Settings page)
-- [ ] Implement authentication & authorization (Full Auth)
+- [x] Implement authentication & authorization (Full Auth)
+
 - [x] Write comprehensive unit tests for parsing and API
 - [ ] CI pipeline for automated testing
 
@@ -32,12 +33,15 @@
 - [x] `bin/get-report`: Fetch detailed single report
 - [x] `bin/report-summary`: Overview of stats with relative date support
 - [x] `bin/flush-reports`: Direct DB bulk deletion tool
+- [x] `bin/reset-admin-password`: CLI utility to reset admin password
+
 
 ## Documentation
 - [x] Updated README with installation and usage
 - [x] Current Features section added to README
 - [x] Comprehensive TODO.md checklist
-- [ ] Contribution guidelines
+- [x] Contribution guidelines (with documentation rule)
+
 - [x] API documentation (OpenAPI spec details)
 
 ## Testing & Verification

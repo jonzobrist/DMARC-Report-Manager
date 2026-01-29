@@ -1,8 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, File as FileIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
 
 const ImportModal = ({ isOpen, onClose, onUploadComplete }) => {
+    const { user } = useAuth();
     const [dragActive, setDragActive] = useState(false);
+
     const [files, setFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState(null); // 'success', 'error'
@@ -58,8 +62,10 @@ const ImportModal = ({ isOpen, onClose, onUploadComplete }) => {
         try {
             const res = await fetch('http://localhost:8000/api/upload', {
                 method: 'POST',
+                headers: { 'Authorization': `Bearer ${user.token}` },
                 body: formData,
             });
+
 
             if (!res.ok) throw new Error("Upload failed");
 

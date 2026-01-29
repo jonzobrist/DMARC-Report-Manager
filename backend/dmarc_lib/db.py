@@ -43,10 +43,13 @@ def init_db():
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password_hash TEXT,
             first_name TEXT,
             last_name TEXT,
             email TEXT UNIQUE,
             phone TEXT,
+            role TEXT DEFAULT 'user', -- 'admin' or 'user'
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -56,14 +59,20 @@ def init_db():
     conn.close()
 
 def _seed_default_user(conn):
+    import bcrypt
+    
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM users")
     if c.fetchone()[0] == 0:
+        password = "admin123".encode('utf-8')
+        hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
         c.execute('''
-            INSERT INTO users (first_name, last_name, email, phone)
-            VALUES (?, ?, ?, ?)
-        ''', ("John", "Doe", "admin@example.com", "555-0199"))
+            INSERT INTO users (username, password_hash, first_name, last_name, email, phone, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', ("admin", hashed_password, "Admin", "User", "admin@example.com", "555-0100", "admin"))
         conn.commit()
+
+
 
 
 def save_report(parsed_data):
@@ -366,7 +375,6 @@ def get_domain_stats():
     rows = [dict(row) for row in c.fetchall()]
     conn.close()
     return rows
-
 def get_user_profile(user_id=1):
     """Fetch user profile details."""
     conn = get_db()
@@ -376,15 +384,84 @@ def get_user_profile(user_id=1):
     conn.close()
     return dict(user) if user else None
 
+
+def get_user_by_username(username):
+    """Fetch user by username for login."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = c.fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+def list_users():
+    """List all users (Admin use)."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id, username, first_name, last_name, email, phone, role, created_at FROM users")
+    users = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return users
+
+def create_user(data):
+    """Create a new user (Admin use)."""
+    import bcrypt
+    
+    conn = get_db()
+    c = conn.cursor()
+    password = data.get('password', 'password123').encode('utf-8')
+    hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
+    try:
+        c.execute('''
+            INSERT INTO users (username, password_hash, first_name, last_name, email, phone, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (data['username'], hashed_password, data['first_name'], data['last_name'], data['email'], data.get('phone', ''), data.get('role', 'user')))
+        conn.commit()
+        new_id = c.lastrowid
+        conn.close()
+        return new_id
+    except sqlite3.IntegrityError:
+        conn.close()
+        return None
+
+
+def delete_user(user_id):
+    """Delete a user (Admin use)."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return True
+
 def update_user_profile(user_id, data):
     """Update user profile details."""
     conn = get_db()
     c = conn.cursor()
-    c.execute('''
-        UPDATE users 
-        SET first_name = ?, last_name = ?, email = ?, phone = ?
-        WHERE id = ?
-    ''', (data['first_name'], data['last_name'], data['email'], data['phone'], user_id))
+    
+    # Support updating password if provided
+    current_user = get_user_profile(user_id)
+    if not current_user:
+        return False
+
+    update_fields = ['first_name', 'last_name', 'email', 'phone']
+    params = [data['first_name'], data['last_name'], data['email'], data['phone']]
+    
+    if 'role' in data:
+        update_fields.append('role')
+        params.append(data['role'])
+        
+    if data.get('password'):
+        import bcrypt
+        update_fields.append('password_hash')
+        password = data['password'].encode('utf-8')
+        params.append(bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8'))
+        
+    set_clause = ", ".join([f"{f} = ?" for f in update_fields])
+    params.append(user_id)
+    
+    c.execute(f"UPDATE users SET {set_clause} WHERE id = ?", params)
     conn.commit()
+
     conn.close()
     return True

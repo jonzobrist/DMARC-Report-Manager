@@ -83,7 +83,11 @@ uv run python -m backend.cli.main troubleshoot example.com
 
 # Import reports
 uv run python -m backend.cli.main import ./path/to/reports/
+
+# Reset admin password (utility script)
+./bin/reset-admin-password [new_password]
 ```
+
 
 ## Contributing
 
@@ -92,6 +96,10 @@ uv run python -m backend.cli.main import ./path/to/reports/
 3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
+
+> [!IMPORTANT]
+> **Documentation Rule**: When adding new utilities, scripts, or significant features, you **must** update the corresponding documentation in [README.md](README.md), [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md), and [API.md](API.md) (if applicable).
+
 
 ## License
 

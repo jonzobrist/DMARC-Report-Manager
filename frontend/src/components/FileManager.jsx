@@ -1,18 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Trash2, FileText, Upload, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import ImportModal from './ImportModal';
 import FlushReportsModal from './FlushReportsModal';
 
+
 const FileManager = () => {
+    const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
+
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isFlushOpen, setIsFlushOpen] = useState(false);
 
     const fetchFiles = async () => {
+        if (!user) return;
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8000/api/files');
+            const res = await fetch('http://localhost:8000/api/files', {
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+
             if (!res.ok) throw new Error("Failed to fetch files");
             const data = await res.json();
             setFiles(data);
@@ -23,15 +31,19 @@ const FileManager = () => {
     };
 
     useEffect(() => {
-        fetchFiles();
-    }, []);
+        if (!authLoading && !user) navigate('/login');
+        if (user) fetchFiles();
+    }, [user, authLoading]);
+
 
     const handleDelete = async (filename) => {
         if (!confirm(`Delete ${filename}?`)) return;
         try {
             const res = await fetch(`http://localhost:8000/api/files/${filename}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${user.token}` }
             });
+
             if (res.ok) {
                 fetchFiles();
             }

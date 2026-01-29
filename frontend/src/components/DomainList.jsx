@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe, Shield, Activity, BarChart3, ChevronRight, Search } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
 
 const DomainList = () => {
+    const { user, loading: authLoading } = useAuth();
     const [domains, setDomains] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
+        if (!authLoading && !user) {
+            navigate('/login');
+            return;
+        }
+
         const fetchDomains = async () => {
+            if (!user) return;
             setLoading(true);
             try {
-                const res = await fetch('http://localhost:8000/api/domains');
+                const res = await fetch('http://localhost:8000/api/domains', {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+
                 if (!res.ok) throw new Error("Failed to fetch domains");
                 const data = await res.json();
                 setDomains(data);

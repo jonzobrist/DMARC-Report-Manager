@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Globe, Settings, Shield, ChevronLeft, ChevronRight, Database } from 'lucide-react';
+import {
+    LayoutDashboard, FileText, Globe, Settings, Shield,
+    ChevronLeft, ChevronRight, Database, LogIn, LogOut
+} from 'lucide-react';
 import Cookies from 'js-cookie';
+import { useAuth } from '../context/AuthContext';
+
 
 const Layout = ({ children }) => {
     const location = useLocation();
+    const { user, logout, isAdmin } = useAuth();
+
 
     // Initialize state from cookie, default to true (open) if not set
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -19,40 +26,21 @@ const Layout = ({ children }) => {
     };
 
     const [version, setVersion] = useState('');
-    const [user, setUser] = useState({ first_name: 'Admin', last_name: 'User' });
-
-    const fetchUserProfile = async () => {
-        try {
-            const res = await fetch('http://localhost:8000/api/user/profile');
-            if (res.ok) {
-                const data = await res.json();
-                setUser(data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch user profile", err);
-        }
-    };
 
     useEffect(() => {
         fetch('http://localhost:8000/api/version')
             .then(res => res.json())
             .then(data => setVersion(data.version))
             .catch(err => console.error("Failed to fetch version", err));
-
-        fetchUserProfile();
-
-        // Listen for profile updates from Settings component
-        window.addEventListener('profileUpdated', fetchUserProfile);
-        return () => window.removeEventListener('profileUpdated', fetchUserProfile);
     }, []);
-
-    const userInitials = `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() || '??';
-    const fullName = `${user.first_name} ${user.last_name}`;
-
 
     const isActive = (path) => {
         return location.pathname === path ? 'active' : '';
     };
+
+
+    const userInitials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : '';
+    const fullName = user ? `${user.first_name} ${user.last_name}` : '';
 
     return (
         <div className={`layout-container ${!isSidebarOpen ? 'collapsed' : ''}`}>
@@ -71,18 +59,24 @@ const Layout = ({ children }) => {
                         <LayoutDashboard size={20} />
                         {isSidebarOpen && <span className="nav-text">Dashboard</span>}
                     </Link>
-                    <Link to="/reports" className={`nav-item ${isActive('/reports')}`}>
-                        <FileText size={20} />
-                        {isSidebarOpen && <span className="nav-text">Reports</span>}
-                    </Link>
-                    <Link to="/files" className={`nav-item ${isActive('/files')}`}>
-                        <Database size={20} />
-                        {isSidebarOpen && <span className="nav-text">Files</span>}
-                    </Link>
-                    <Link to="/domains" className={`nav-item ${isActive('/domains')}`}>
-                        <Globe size={20} />
-                        {isSidebarOpen && <span className="nav-text">Domains</span>}
-                    </Link>
+
+                    {user && (
+                        <>
+                            <Link to="/reports" className={`nav-item ${isActive('/reports')}`}>
+                                <FileText size={20} />
+                                {isSidebarOpen && <span className="nav-text">Reports</span>}
+                            </Link>
+                            <Link to="/files" className={`nav-item ${isActive('/files')}`}>
+                                <Database size={20} />
+                                {isSidebarOpen && <span className="nav-text">Files</span>}
+                            </Link>
+                            <Link to="/domains" className={`nav-item ${isActive('/domains')}`}>
+                                <Globe size={20} />
+                                {isSidebarOpen && <span className="nav-text">Domains</span>}
+                            </Link>
+                        </>
+                    )}
+
                     <div className="nav-spacer"></div>
                     <Link to="/settings" className={`nav-item ${isActive('/settings')}`}>
                         <Settings size={20} />
@@ -91,15 +85,33 @@ const Layout = ({ children }) => {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <div className="user-profile">
-                        <div className="avatar">{userInitials}</div>
-                        {isSidebarOpen && (
-                            <div className="user-info">
-                                <span className="user-name">{fullName}</span>
-                                <span className="user-role">Admin</span>
+                    {user ? (
+                        <div className="user-profile" style={{ cursor: 'default' }}>
+                            <div className="avatar">{userInitials}</div>
+                            {isSidebarOpen && (
+                                <div className="user-info">
+                                    <span className="user-name">{fullName}</span>
+                                    <button onClick={logout} className="btn-text" style={{ fontSize: '0.75rem', padding: 0, justifyContent: 'flex-start', color: 'rgba(255,255,255,0.5)' }}>
+                                        <LogOut size={12} style={{ marginRight: '4px' }} />
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <Link to="/login" className="user-profile" style={{ textDecoration: 'none' }}>
+                            <div className="avatar" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                                <LogIn size={18} />
                             </div>
-                        )}
-                    </div>
+                            {isSidebarOpen && (
+                                <div className="user-info">
+                                    <span className="user-name">Guest</span>
+                                    <span className="user-role" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign In</span>
+                                </div>
+                            )}
+                        </Link>
+                    )}
+
 
                     {isSidebarOpen && (
                         <div className="version-info">

@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, XCircle, Shield, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
 
 const ReportDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
+
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!authLoading && !user) {
+            navigate('/login');
+            return;
+        }
+
         const fetchReport = async () => {
+            if (!user) return;
             try {
-                const res = await fetch(`http://localhost:8000/api/reports/${id}`);
+                const res = await fetch(`http://localhost:8000/api/reports/${id}`, {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+
                 if (!res.ok) throw new Error("Report not found");
                 const data = await res.json();
                 setReport(data);

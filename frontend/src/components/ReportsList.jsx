@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { FileText, Search, ChevronLeft, ChevronRight, Eye, X } from 'lucide-react';
 
 const ReportsList = () => {
+    const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
+
     const [searchParams, setSearchParams] = useSearchParams();
     const domainFilter = searchParams.get('domain');
 
@@ -13,7 +17,16 @@ const ReportsList = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
+    useEffect(() => {
+        if (!authLoading && !user) {
+            navigate('/login');
+            return;
+        }
+        if (user) fetchReports();
+    }, [user, authLoading, page, search, domainFilter]);
+
     const fetchReports = async () => {
+
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -23,7 +36,10 @@ const ReportsList = () => {
             if (search) params.append('search', search);
             if (domainFilter) params.append('domain', domainFilter);
 
-            const res = await fetch(`http://localhost:8000/api/reports?${params}`);
+            const res = await fetch(`http://localhost:8000/api/reports?${params}`, {
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+
             if (!res.ok) throw new Error("Failed to fetch reports");
             const data = await res.json();
 

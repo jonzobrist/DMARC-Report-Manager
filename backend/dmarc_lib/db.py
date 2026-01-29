@@ -444,12 +444,14 @@ def update_user_profile(user_id, data):
     if not current_user:
         return False
 
-    update_fields = ['first_name', 'last_name', 'email', 'phone']
-    params = [data['first_name'], data['last_name'], data['email'], data['phone']]
+    update_fields = []
+    params = []
     
-    if 'role' in data:
-        update_fields.append('role')
-        params.append(data['role'])
+    # Only update fields that are present in data and not None
+    for field in ['first_name', 'last_name', 'email', 'phone', 'role']:
+        if field in data and data[field] is not None:
+            update_fields.append(field)
+            params.append(data[field])
         
     if data.get('password'):
         import bcrypt
@@ -457,10 +459,14 @@ def update_user_profile(user_id, data):
         password = data['password'].encode('utf-8')
         params.append(bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8'))
         
+    if not update_fields:
+        return True # Nothing to update
+        
     set_clause = ", ".join([f"{f} = ?" for f in update_fields])
     params.append(user_id)
     
     c.execute(f"UPDATE users SET {set_clause} WHERE id = ?", params)
+
     conn.commit()
 
     conn.close()

@@ -8,9 +8,15 @@
 #   -d DAYS           Relative number of days back from today (overrides --start/--end).
 # All arguments are optional. By default it shows stats for the last 30 days.
 
-set -euo pipefail
+# Load .env if it exists in project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+if [ -f "$ROOT_DIR/.env" ]; then
+  # Load .env but ignore comments and empty lines
+  export $(grep -v '^#' "$ROOT_DIR/.env" | grep -v '^$' | xargs)
+fi
 
-API_BASE="${DMARC_API_URL:-http://localhost:8000}"
+API_BASE="${DMARC_API_URL:-${VITE_API_URL:-http://localhost:8000}}"
 API_STATS="${API_BASE%/}/api/stats"
 API_REPORTS="${API_BASE%/}/api/reports"
 

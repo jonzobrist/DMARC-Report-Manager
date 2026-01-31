@@ -5,9 +5,15 @@
 # If --id is omitted, the script will prompt the user to enter an ID.
 # The backend endpoint is /api/reports/{id}.
 
-set -euo pipefail
+# Load .env if it exists in project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+if [ -f "$ROOT_DIR/.env" ]; then
+  # Load .env but ignore comments and empty lines
+  export $(grep -v '^#' "$ROOT_DIR/.env" | grep -v '^$' | xargs)
+fi
 
-API_BASE_URL="${DMARC_API_URL:-http://localhost:8000}"
+API_BASE_URL="${DMARC_API_URL:-${VITE_API_URL:-http://localhost:8000}}"
 API_BASE="${API_BASE_URL%/}/api/reports"
 
 print_usage() {

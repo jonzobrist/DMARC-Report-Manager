@@ -8,9 +8,15 @@
 #   --page N        Pagination page (default 1).
 #   --limit N       Items per page (default 50).
 
-set -euo pipefail
+# Load .env if it exists in project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+if [ -f "$ROOT_DIR/.env" ]; then
+  # Load .env but ignore comments and empty lines
+  export $(grep -v '^#' "$ROOT_DIR/.env" | grep -v '^$' | xargs)
+fi
 
-API_BASE="${DMARC_API_URL:-http://localhost:8000}"
+API_BASE="${DMARC_API_URL:-${VITE_API_URL:-http://localhost:8000}}"
 API_URL="${API_BASE%/}/api/reports"
 
 # Default values

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Save, CheckCircle, Trash2, UserPlus, Shield, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 const UserManagement = ({ token }) => {
     const [users, setUsers] = useState([]);
@@ -11,7 +12,7 @@ const UserManagement = ({ token }) => {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/users', {
+            const res = await fetch(`${API_BASE_URL}/api/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) setUsers(await res.json());
@@ -25,7 +26,7 @@ const UserManagement = ({ token }) => {
         e.preventDefault();
         setMsg(null);
         try {
-            const res = await fetch('http://localhost:8000/api/users', {
+            const res = await fetch(`${API_BASE_URL}/api/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(newUser)
@@ -45,7 +46,7 @@ const UserManagement = ({ token }) => {
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this user?')) return;
         try {
-            const res = await fetch(`http://localhost:8000/api/users/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/users/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

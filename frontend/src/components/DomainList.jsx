@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 import { Globe, Shield, Activity, BarChart3, ChevronRight, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 

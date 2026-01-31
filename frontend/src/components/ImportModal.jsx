@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, File as FileIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 
 const ImportModal = ({ isOpen, onClose, onUploadComplete }) => {
@@ -60,7 +61,7 @@ const ImportModal = ({ isOpen, onClose, onUploadComplete }) => {
         });
 
         try {
-            const res = await fetch('http://localhost:8000/api/upload', {
+            const res = await fetch(`${API_BASE_URL}/api/upload`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${user.token}` },
                 body: formData,

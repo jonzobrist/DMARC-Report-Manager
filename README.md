@@ -62,6 +62,7 @@ Key settings:
 - `BACKEND_PORT`: Port for the API backend (default: 8000).
 - `FRONTEND_PORT`: Port for the React frontend (default: 5173).
 - `ALLOWED_HOSTS`: Comma-separated list of allowed hosts for CORS and Vite host checking (e.g., `localhost,dmarc.zlyxy.me`).
+- `VITE_API_URL`: The URL where the browser can reach the backend API (e.g., `http://dmarc.zlyxy.me:8000`).
 
 #### Running the Web Application
 A convenience script is provided to start both services using the configured ports:
@@ -109,7 +110,18 @@ uv run python -m backend.cli.main import ./path/to/reports/
 ```
 
 
-## Contributing
+#### Remote CLI Usage
+The CLI tools can be used to manage a remote instance by specifying the API URL:
+```bash
+# Using environment variable
+export DMARC_API_URL="http://dmarc.zlyxy.me"
+./bin/list-reports
+
+# Using command-line argument
+./bin/list-reports --api-url "http://dmarc.zlyxy.me"
+```
+
+### Contributing
 
 1.  Fork the Project
 2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)

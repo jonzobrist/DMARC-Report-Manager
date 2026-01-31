@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FileText, Search, ChevronLeft, ChevronRight, Eye, X } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 
 const ReportsList = () => {
@@ -37,7 +38,7 @@ const ReportsList = () => {
             if (search) params.append('search', search);
             if (domainFilter) params.append('domain', domainFilter);
 
-            const res = await fetch(`http://localhost:8000/api/reports?${params}`, {
+            const res = await fetch(`${API_BASE_URL}/api/reports?${params}`, {
                 headers: { 'Authorization': `Bearer ${user.token}` }
             });
 

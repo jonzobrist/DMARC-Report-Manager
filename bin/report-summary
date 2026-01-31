@@ -10,8 +10,9 @@
 
 set -euo pipefail
 
-API_STATS="http://localhost:8000/api/stats"
-API_REPORTS="http://localhost:8000/api/reports"
+API_BASE="${DMARC_API_URL:-http://localhost:8000}"
+API_STATS="${API_BASE%/}/api/stats"
+API_REPORTS="${API_BASE%/}/api/reports"
 
 # Default values
 DAYS=30
@@ -20,7 +21,7 @@ END=""
 DOMAIN=""
 
 print_usage() {
-  echo "Usage: $0 [--domain DOMAIN] [--start YYYY-MM-DD] [--end YYYY-MM-DD] [-d DAYS]"
+  echo "Usage: $0 [--domain DOMAIN] [--start YYYY-MM-DD] [--end YYYY-MM-DD] [-d DAYS] [--api-url URL]"
 }
 
 # Parse arguments
@@ -40,6 +41,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     --end)
       END="$2"
+      shift 2
+      ;;
+    --api-url)
+      API_BASE="$2"
+      API_STATS="${API_BASE%/}/api/stats"
+      API_REPORTS="${API_BASE%/}/api/reports"
       shift 2
       ;;
     -h|--help)

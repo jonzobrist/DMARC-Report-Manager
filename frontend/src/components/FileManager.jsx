@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, FileText, Upload, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 import ImportModal from './ImportModal';
 import FlushReportsModal from './FlushReportsModal';
 
@@ -18,7 +19,7 @@ const FileManager = () => {
         if (!user) return;
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8000/api/files', {
+            const res = await fetch(`${API_BASE_URL}/api/files`, {
                 headers: { 'Authorization': `Bearer ${user.token}` }
             });
 
@@ -40,7 +41,7 @@ const FileManager = () => {
     const handleDelete = async (filename) => {
         if (!confirm(`Delete ${filename}?`)) return;
         try {
-            const res = await fetch(`http://localhost:8000/api/files/${filename}`, {
+            const res = await fetch(`${API_BASE_URL}/api/files/${filename}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${user.token}` }
             });

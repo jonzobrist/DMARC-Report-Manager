@@ -5,6 +5,7 @@ import { ShieldCheck, ShieldAlert, Mail, ArrowUpRight, ArrowDownRight, MoreHoriz
 import Cookies from 'js-cookie';
 import ImportModal from './ImportModal';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 
 const Dashboard = () => {
@@ -65,7 +66,7 @@ const Dashboard = () => {
                 endTs = Math.floor(defaultEnd.getTime() / 1000);
             }
 
-            const res = await fetch(`http://localhost:8000/api/stats?start=${startTs}&end=${endTs}`, {
+            const res = await fetch(`${API_BASE_URL}/api/stats?start=${startTs}&end=${endTs}`, {
                 headers: user ? { 'Authorization': `Bearer ${user.token}` } : {}
             });
 

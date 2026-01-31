@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 
 const Layout = ({ children }) => {
@@ -28,7 +29,7 @@ const Layout = ({ children }) => {
     const [version, setVersion] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/version')
+        fetch(`${API_BASE_URL}/api/version`)
             .then(res => res.json())
             .then(data => setVersion(data.version))
             .catch(err => console.error("Failed to fetch version", err));

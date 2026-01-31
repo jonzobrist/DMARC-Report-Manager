@@ -7,10 +7,11 @@
 
 set -euo pipefail
 
-API_BASE="http://localhost:8000/api/reports"
+API_BASE_URL="${DMARC_API_URL:-http://localhost:8000}"
+API_BASE="${API_BASE_URL%/}/api/reports"
 
 print_usage() {
-  echo "Usage: $0 [--id REPORT_ID]"
+  echo "Usage: $0 [--id REPORT_ID] [--api-url URL]"
 }
 
 # Parse arguments
@@ -19,6 +20,11 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     --id)
       REPORT_ID="$2"
+      shift 2
+      ;;
+    --api-url)
+      API_BASE_URL="$2"
+      API_BASE="${API_BASE_URL%/}/api/reports"
       shift 2
       ;;
     -h|--help)

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, XCircle, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 
 const ReportDetail = () => {
@@ -22,7 +23,7 @@ const ReportDetail = () => {
         const fetchReport = async () => {
             if (!user) return;
             try {
-                const res = await fetch(`http://localhost:8000/api/reports/${id}`, {
+                const res = await fetch(`${API_BASE_URL}/api/reports/${id}`, {
                     headers: { 'Authorization': `Bearer ${user.token}` }
                 });
 

@@ -8,12 +8,30 @@
 
 set -euo pipefail
 
-API_URL="http://localhost:8000/api/upload"
+API_BASE="${DMARC_API_URL:-http://localhost:8000}"
+API_URL="${API_BASE%/}/api/upload"
 
 print_usage() {
-  echo "Usage: $0 <path> [more paths...]"
+  echo "Usage: $0 [--api-url URL] <path> [more paths...]"
   echo "Each path can be a file or a directory. Directories are scanned for files (non-recursive)."
 }
+
+# Parse API URL if provided
+TEMP_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --api-url)
+      API_BASE="$2"
+      API_URL="${API_BASE%/}/api/upload"
+      shift 2
+      ;;
+    *)
+      TEMP_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+set -- "${TEMP_ARGS[@]}"
 
 if [[ $# -lt 1 ]]; then
   echo "Error: No files or directories specified."

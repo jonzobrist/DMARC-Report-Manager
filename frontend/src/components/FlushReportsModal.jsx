@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Trash2, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 const FlushReportsModal = ({ isOpen, onClose, onFlushComplete }) => {
     const [domain, setDomain] = useState('');
@@ -46,7 +47,7 @@ const FlushReportsModal = ({ isOpen, onClose, onFlushComplete }) => {
                 params.append('end', endTs);
             }
 
-            const res = await fetch(`http://localhost:8000/api/reports?${params.toString()}`, {
+            const res = await fetch(`${API_BASE_URL}/api/reports?${params.toString()}`, {
                 method: 'DELETE'
             });
 

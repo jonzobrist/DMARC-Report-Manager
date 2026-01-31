@@ -21,13 +21,29 @@ if not CORS_ALLOWED_ORIGINS:
     if "*" in ALLOWED_HOSTS:
         CORS_ALLOWED_ORIGINS = ["*"]
     else:
+        # Get configured ports for fallback
+        f_port = os.environ.get("FRONTEND_PORT", "5173")
+        b_port = os.environ.get("BACKEND_PORT", "8000")
+        
         for host in ALLOWED_HOSTS:
+            if host == "*":
+                CORS_ALLOWED_ORIGINS = ["*"]
+                break
+            
+            # Standard protocols
             CORS_ALLOWED_ORIGINS.append(f"http://{host}")
             CORS_ALLOWED_ORIGINS.append(f"https://{host}")
-            # Also support common dev ports if localhost
-            if host in ["localhost", "127.0.0.1"]:
-                 CORS_ALLOWED_ORIGINS.append(f"http://{host}:5173")
-                 CORS_ALLOWED_ORIGINS.append(f"http://{host}:8101")
+            
+            # Both common and configured ports
+            for port in [f_port, b_port, "5173", "8000", "8100", "8101", "3000"]:
+                CORS_ALLOWED_ORIGINS.append(f"http://{host}:{port}")
+                CORS_ALLOWED_ORIGINS.append(f"https://{host}:{port}")
+
+# Ensure uniqueness and strip trailing slashes just in case
+if "*" not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS = list(set([o.rstrip("/") for o in CORS_ALLOWED_ORIGINS if o]))
+else:
+    CORS_ALLOWED_ORIGINS = ["*"]
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "super-secret-key-change-me-in-production")
 DB_PATH = os.environ.get("DB_PATH", "dmarc_reports.db")

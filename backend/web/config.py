@@ -18,28 +18,27 @@ CORS_ALLOWED_ORIGINS = get_list("CORS_ALLOWED_ORIGINS", [])
 
 # If CORS_ALLOWED_ORIGINS is empty, derive from ALLOWED_HOSTS for convenience
 if not CORS_ALLOWED_ORIGINS:
-    if "*" in ALLOWED_HOSTS:
-        CORS_ALLOWED_ORIGINS = ["*"]
-    else:
-        # Get configured ports for fallback
-        f_port = os.environ.get("FRONTEND_PORT", "5173")
-        b_port = os.environ.get("BACKEND_PORT", "8000")
+    # Get configured ports
+    f_port = os.environ.get("FRONTEND_PORT", "5173")
+    b_port = os.environ.get("BACKEND_PORT", "8000")
+    
+    for host in ALLOWED_HOSTS:
+        if host == "*":
+            # If the user explicitly put * in ALLOWED_HOSTS, they get it in CORS too,
+            # but we won't add it ourselves as a fallback.
+            CORS_ALLOWED_ORIGINS = ["*"]
+            break
         
-        for host in ALLOWED_HOSTS:
-            if host == "*":
-                CORS_ALLOWED_ORIGINS = ["*"]
-                break
-            
-            # Standard protocols
-            CORS_ALLOWED_ORIGINS.append(f"http://{host}")
-            CORS_ALLOWED_ORIGINS.append(f"https://{host}")
-            
-            # Both common and configured ports
-            for port in [f_port, b_port, "5173", "8000", "8100", "8101", "3000"]:
-                CORS_ALLOWED_ORIGINS.append(f"http://{host}:{port}")
-                CORS_ALLOWED_ORIGINS.append(f"https://{host}:{port}")
+        # Standard protocols
+        CORS_ALLOWED_ORIGINS.append(f"http://{host}")
+        CORS_ALLOWED_ORIGINS.append(f"https://{host}")
+        
+        # Both common and configured ports
+        for port in [f_port, b_port, "5173", "8000", "8100", "8101", "3000"]:
+            CORS_ALLOWED_ORIGINS.append(f"http://{host}:{port}")
+            CORS_ALLOWED_ORIGINS.append(f"https://{host}:{port}")
 
-# Ensure uniqueness and strip trailing slashes just in case
+# Ensure uniqueness and strip trailing slashes
 if "*" not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS = list(set([o.rstrip("/") for o in CORS_ALLOWED_ORIGINS if o]))
 else:

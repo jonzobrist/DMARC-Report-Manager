@@ -55,20 +55,40 @@ The backend provides a RESTful API for integration and automation. See [API.md](
 
 ## Usage
 
-### Running the Web Application
+#### Configuration
+The application can be configured using environment variables or a `.env` file in the project root. See `.env.example` for all available options.
+
+Key settings:
+- `BACKEND_PORT`: Port for the API backend (default: 8000).
+- `FRONTEND_PORT`: Port for the React frontend (default: 5173).
+- `ALLOWED_HOSTS`: Comma-separated list of allowed hosts for CORS and Vite host checking (e.g., `localhost,dmarc.zlyxy.me`).
+
+#### Running the Web Application
+A convenience script is provided to start both services using the configured ports:
+```bash
+./bin/start
+```
+
+Alternatively, you can start them manually:
 
 1.  **Start the Backend API**:
     ```bash
-    # From project root
-    uv run uvicorn backend.web.api:app --reload --port 8000
+    uv run uvicorn backend.web.api:app --host 127.0.0.1 --port 8000
     ```
 
 2.  **Start the Frontend Dev Server**:
     ```bash
-    # From frontend/ directory
+    cd frontend
     pnpm dev
     ```
     Open your browser to `http://localhost:5173`.
+
+#### Service Management (Linux/systemd)
+Use the management script to install the background services:
+```bash
+sudo ./bin/manage-service install
+./bin/manage-service status
+```
 
 ### Using the CLI
 

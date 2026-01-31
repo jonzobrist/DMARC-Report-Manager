@@ -7,7 +7,7 @@ Type=simple
 User=USER_PLACEHOLDER
 WorkingDirectory=PROJECT_ROOT_PLACEHOLDER
 Environment=PATH=PROJECT_ROOT_PLACEHOLDER/.venv/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=PROJECT_ROOT_PLACEHOLDER/.venv/bin/uvicorn backend.web.api:app --host APP_HOST_PLACEHOLDER --port APP_PORT_PLACEHOLDER
+ExecStart=PROJECT_ROOT_PLACEHOLDER/.venv/bin/uvicorn backend.web.api:app --host APP_HOST_PLACEHOLDER --port BACKEND_PORT_PLACEHOLDER
 Restart=always
 
 [Install]

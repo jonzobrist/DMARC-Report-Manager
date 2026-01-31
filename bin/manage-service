@@ -25,7 +25,8 @@ load_config() {
         export $(grep -v '^#' "${PROJECT_ROOT}/.env" | xargs)
     fi
     APP_HOST="${APP_HOST:-127.0.0.1}"
-    APP_PORT="${APP_PORT:-8000}"
+    BACKEND_PORT="${BACKEND_PORT:-8000}"
+    FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 }
 
 install() {
@@ -36,7 +37,7 @@ install() {
     sed -e "s|USER_PLACEHOLDER|${SUDO_USER:-$USER}|g" \
         -e "s|PROJECT_ROOT_PLACEHOLDER|${PROJECT_ROOT}|g" \
         -e "s|APP_HOST_PLACEHOLDER|${APP_HOST}|g" \
-        -e "s|APP_PORT_PLACEHOLDER|${APP_PORT}|g" \
+        -e "s|BACKEND_PORT_PLACEHOLDER|${BACKEND_PORT}|g" \
         "${BACKEND_TEMPLATE}" > "${SYSTEMD_PATH}/${SERVICE_NAME_BACKEND}"
     
     # Frontend

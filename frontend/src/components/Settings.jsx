@@ -36,7 +36,8 @@ const UserManagement = ({ token }) => {
                 setNewUser({ username: '', password: '', first_name: '', last_name: '', email: '', role: 'user' });
                 fetchUsers();
             } else {
-                setMsg({ type: 'error', text: data.detail });
+                const errorText = typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail;
+                setMsg({ type: 'error', text: errorText || 'Failed to create user' });
             }
         } catch (err) { setMsg({ type: 'error', text: 'Failed to create user' }); }
     };
@@ -126,6 +127,13 @@ const UserManagement = ({ token }) => {
                                 <input type="text" className="input-with-icon" style={{ paddingLeft: '1rem' }} placeholder="Last Name" value={newUser.last_name} onChange={e => setNewUser({ ...newUser, last_name: e.target.value })} required />
                             </div>
                         </div>
+                        <div className="form-group">
+                            <label className="form-label">Email Address</label>
+                            <div className="input-container">
+                                <Mail size={16} className="input-icon" />
+                                <input type="email" className="input-with-icon" placeholder="email@example.com" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required />
+                            </div>
+                        </div>
                         <div className="form-row">
                             <label className="form-label">Role</label>
                             <select className="input-with-icon" style={{ paddingLeft: '1rem' }} value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
@@ -198,7 +206,11 @@ const Settings = () => {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
                 body: JSON.stringify(profile)
             });
-            if (!res.ok) throw new Error("Failed to update profile");
+            if (!res.ok) {
+                const data = await res.json();
+                const errorText = typeof data.detail === 'object' ? JSON.stringify(data.detail) : data.detail;
+                throw new Error(errorText || "Failed to update profile");
+            }
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
 
             // Dispatch a custom event to notify Layout to refresh the profile

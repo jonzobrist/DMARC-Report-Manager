@@ -177,7 +177,7 @@ const Settings = () => {
 
         const fetchProfile = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/user/profile', {
+                const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
                     headers: { 'Authorization': `Bearer ${user.token}` }
                 });
                 if (!res.ok) throw new Error("Failed to fetch profile");
@@ -202,7 +202,7 @@ const Settings = () => {
         setSaving(true);
         setMessage(null);
         try {
-            const res = await fetch('http://localhost:8000/api/user/profile', {
+            const res = await fetch(`${API_BASE_URL}/api/user/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
                 body: JSON.stringify(profile)

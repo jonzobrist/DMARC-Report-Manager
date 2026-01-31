@@ -22,7 +22,7 @@ const DomainList = () => {
             if (!user) return;
             setLoading(true);
             try {
-                const res = await fetch('http://localhost:8000/api/domains', {
+                const res = await fetch(`${API_BASE_URL}/api/domains`, {
                     headers: { 'Authorization': `Bearer ${user.token}` }
                 });
 

@@ -35,9 +35,7 @@ app = FastAPI(title="DMARC Report Manager")
 UPLOAD_DIR = Path("backend/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "super-secret-key-change-me-in-production")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
+from backend.web import config
 
 security = HTTPBearer()
 
@@ -45,7 +43,7 @@ security = HTTPBearer()
 # Enable CORS for Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict to frontend URL
+    allow_origins=config.ALLOWED_HOSTS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -75,7 +73,7 @@ class UserCreate(UserProfile):
 # Auth Helper
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(credentials.credentials, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -106,10 +104,10 @@ async def login(req: LoginRequest):
     if not bcrypt.checkpw(password_bytes, password_hash_bytes):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
-    expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {"sub": user['username'], "exp": expires, "role": user['role']}
-    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
     
     return {
         "access_token": token, 
@@ -205,7 +203,7 @@ async def stats(start: Optional[int] = None, end: Optional[int] = None, request:
     if auth_header and auth_header.startswith("Bearer "):
         try:
             token = auth_header.split(" ")[1]
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
             user = get_user_by_username(payload.get("sub"))
         except:
             pass

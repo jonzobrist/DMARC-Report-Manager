@@ -1,0 +1,14 @@
+[Unit]
+Description=DMARC Report Manager Frontend
+After=network.target dmarc-backend.service
+
+[Service]
+Type=simple
+User=USER_PLACEHOLDER
+WorkingDirectory=PROJECT_ROOT_PLACEHOLDER/frontend
+Environment=PATH=PROJECT_ROOT_PLACEHOLDER/frontend/node_modules/.bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=pnpm dev --host
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

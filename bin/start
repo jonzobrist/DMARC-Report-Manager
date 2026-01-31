@@ -25,13 +25,22 @@ if ! command -v pnpm &> /dev/null; then
     exit 1
 fi
 
+# Load .env if present
+if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# Use configured host and port or defaults
+APP_HOST="${APP_HOST:-127.0.0.1}"
+APP_PORT="${APP_PORT:-8000}"
+
 # Start Backend
 if [ -d "backend" ]; then
     if [ -f "${RUN_DIR}/backend.pid" ] && kill -0 $(cat "${RUN_DIR}/backend.pid") 2>/dev/null; then
         echo -e "${GREEN}Backend is already running (PID: $(cat "${RUN_DIR}/backend.pid"))${NC}"
     else
-        echo "Starting Backend API..."
-        nohup uv run uvicorn backend.web.api:app --reload --port 8000 > "${RUN_DIR}/backend.log" 2>&1 &
+        echo "Starting Backend API on ${APP_HOST}:${APP_PORT}..."
+        nohup uv run uvicorn backend.web.api:app --host "${APP_HOST}" --port "${APP_PORT}" > "${RUN_DIR}/backend.log" 2>&1 &
         echo ${!} > "${RUN_DIR}/backend.pid"
         echo -e "${GREEN}Backend started (PID: $(cat "${RUN_DIR}/backend.pid"))${NC}"
     fi
@@ -48,6 +57,7 @@ if [ -d "frontend" ]; then
     else
         echo "Starting Frontend Web App..."
         cd frontend || exit 1
+        # Vite dev server defaults to 5173, but we can customize if needed
         nohup pnpm dev > "${RUN_DIR}/frontend.log" 2>&1 &
         echo ${!} > "${RUN_DIR}/frontend.pid"
         echo -e "${GREEN}Frontend started (PID: $(cat "${RUN_DIR}/frontend.pid"))${NC}"
@@ -60,5 +70,5 @@ fi
 echo "Logs are available in ${RUN_DIR}"
 echo ""
 echo "Services are running:"
-echo "- Backend API:  http://localhost:8000"
+echo "- Backend API:  http://${APP_HOST}:${APP_PORT}"
 echo "- Frontend App: http://localhost:5173"

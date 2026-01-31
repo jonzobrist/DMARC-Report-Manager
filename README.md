@@ -61,7 +61,8 @@ The application can be configured using environment variables or a `.env` file i
 Key settings:
 - `BACKEND_PORT`: Port for the API backend (default: 8000).
 - `FRONTEND_PORT`: Port for the React frontend (default: 5173).
-- `ALLOWED_HOSTS`: Comma-separated list of allowed hosts for CORS and Vite host checking (e.g., `localhost,dmarc.zlyxy.me`).
+- `ALLOWED_HOSTS`: Hosts allowed by the backend (e.g., `localhost,dmarc.zlyxy.me`).
+- `CORS_ALLOWED_ORIGINS`: Full URLs allowed for browser CORS (e.g., `https://dmarc.zlyxy.me`).
 - `VITE_API_URL`: The URL where the browser can reach the backend API (e.g., `http://dmarc.zlyxy.me:8000`).
 
 #### Running the Web Application

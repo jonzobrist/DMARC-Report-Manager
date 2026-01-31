@@ -43,7 +43,7 @@ security = HTTPBearer()
 # Enable CORS for Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.ALLOWED_HOSTS,
+    allow_origins=config.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

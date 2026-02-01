@@ -20,16 +20,14 @@ CORS_ALLOWED_ORIGINS = get_list("CORS_ALLOWED_ORIGINS", [])
 if not CORS_ALLOWED_ORIGINS:
     # Get configured ports
     f_port = os.environ.get("FRONTEND_PORT", "5173")
-    b_port = os.environ.get("BACKEND_PORT", "8000")
+    b_port = os.environ.get("BACKEND_PORT", "8080") # Fallback to common port
     
     for host in ALLOWED_HOSTS:
         if host == "*":
-            # If the user explicitly put * in ALLOWED_HOSTS, they get it in CORS too,
-            # but we won't add it ourselves as a fallback.
             CORS_ALLOWED_ORIGINS = ["*"]
             break
         
-        # Standard protocols
+        # Standard protocols (no port = 80/443 effectively)
         CORS_ALLOWED_ORIGINS.append(f"http://{host}")
         CORS_ALLOWED_ORIGINS.append(f"https://{host}")
         
@@ -40,7 +38,7 @@ if not CORS_ALLOWED_ORIGINS:
 
 # Ensure uniqueness and strip trailing slashes
 if "*" not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS = list(set([o.rstrip("/") for o in CORS_ALLOWED_ORIGINS if o]))
+    CORS_ALLOWED_ORIGINS = sorted(list(set([o.rstrip("/") for o in CORS_ALLOWED_ORIGINS if o])))
 else:
     CORS_ALLOWED_ORIGINS = ["*"]
 

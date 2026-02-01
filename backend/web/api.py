@@ -41,14 +41,15 @@ security = HTTPBearer()
 
 
 # Enable CORS for Frontend
+# Note: allow_credentials must be False if allow_origins is ["*"]
 allow_all = "*" in config.CORS_ALLOWED_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ALLOWED_ORIGINS,
-    allow_credentials=True, # Allow credentials for specific origins
+    allow_credentials=not allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Content-Disposition"],
+    expose_headers=["Content-Disposition", "X-Total-Count"],
 )
 
 

@@ -61,9 +61,9 @@ The application can be configured using environment variables or a `.env` file i
 Key settings:
 - `BACKEND_PORT`: Port for the API backend (default: 8000).
 - `FRONTEND_PORT`: Port for the React frontend (default: 5173).
-- `ALLOWED_HOSTS`: Hosts allowed by the backend (e.g., `localhost,dmarc.zlyxy.me`). **Note**: Include your frontend domain here so it is automatically trusted for CORS.
-- `CORS_ALLOWED_ORIGINS`: Full URLs allowed for browser CORS (e.g., `https://dmarc.zlyxy.me`).
-- `VITE_API_URL`: The URL where the browser can reach the backend API (e.g., `https://dmarc-api.zlyxy.me`).
+- `ALLOWED_HOSTS`: Hosts allowed by the backend (e.g., `localhost,dmarc.example.com`). **Note**: Include your frontend domain here so it is automatically trusted for CORS.
+- `CORS_ALLOWED_ORIGINS`: Full URLs allowed for browser CORS (e.g., `https://dmarc.example.com`).
+- `VITE_API_URL`: The URL where the browser can reach the backend API (e.g., `https://dmarc-api.example.com`).
 
 > [!IMPORTANT]
 > **CORS Troubleshooting**: 
@@ -122,11 +122,11 @@ uv run python -m backend.cli.main import ./path/to/reports/
 The CLI tools can be used to manage a remote instance by specifying the API URL:
 ```bash
 # Using environment variable
-export DMARC_API_URL="http://dmarc.zlyxy.me"
+export DMARC_API_URL="http://dmarc.example.com"
 ./bin/list-reports
 
 # Using command-line argument
-./bin/list-reports --api-url "http://dmarc.zlyxy.me"
+./bin/list-reports --api-url "http://dmarc.example.com"
 ```
 
 ### Contributing

@@ -16,7 +16,7 @@ Most endpoints require authentication via a **JWT (JSON Web Token)**.
    ```
 
 > [!NOTE]
-> Public access is limited. For example, `GET /api/stats` without a token will hide sensitive domain names.
+> Public access is limited. `GET /api/stats` can be called without a token but will hide sensitive domain names; all file, report, and domain endpoints require authentication.
 
 
 ## Endpoints
@@ -84,6 +84,7 @@ Update the current user's profile (name, email, phone, or password). (Requires A
 
 #### `POST /api/upload`
 Upload DMARC XML files (optionally gzipped or zipped). Files are automatically processed into the database upon upload.
+(Requires Auth)
 
 **Request:**
 - Content-Type: `multipart/form-data`
@@ -96,6 +97,7 @@ curl -F "files=@report.xml" http://localhost:8000/api/upload
 
 #### `GET /api/files`
 List all uploaded files in the storage directory.
+(Requires Auth)
 
 **Example:**
 ```bash
@@ -104,6 +106,7 @@ curl http://localhost:8000/api/files
 
 #### `DELETE /api/files/{filename}`
 Delete a specific uploaded file from storage (does not delete processed records from the DB).
+(Requires Auth)
 
 **Example:**
 ```bash
@@ -116,6 +119,7 @@ curl -X DELETE http://localhost:8000/api/files/google.com!example.com!1712345678
 
 #### `GET /api/stats`
 Get aggregated statistics for the dashboard.
+Public (optional Auth)
 
 **Query Parameters:**
 - `start` (optional): Unix timestamp (seconds)
@@ -128,6 +132,7 @@ curl "http://localhost:8000/api/stats?start=1704067200"
 
 #### `GET /api/reports`
 Get a paginated list of processed reports.
+(Requires Auth)
 
 **Query Parameters:**
 - `page` (default: 1): Page number
@@ -143,6 +148,7 @@ curl "http://localhost:8000/api/reports?domain=example.com"
 #### `GET /api/reports/{id}`
 Get full details for a specific report, including its individual records.
 The `id` can be the internal numerical ID or the unique `report_id` string.
+(Requires Auth)
 
 **Example:**
 ```bash
@@ -151,6 +157,7 @@ curl http://localhost:8000/api/reports/123
 
 #### `DELETE /api/reports`
 Bulk delete reports from the database based on filters.
+(Requires Auth)
 
 **Query Parameters:**
 - `days`: Delete reports older than X days
@@ -165,6 +172,7 @@ curl -X DELETE "http://localhost:8000/api/reports?days=90"
 
 #### `GET /api/domains`
 Get a list of all unique domains with aggregated performance stats.
+(Requires Auth)
 
 **Example:**
 ```bash

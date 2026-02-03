@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.web.api import app
-from backend.dmarc_lib.db import init_db
+from backend.dmarc_lib.db import init_db, save_report, get_db
 
 client = TestClient(app)
 
@@ -50,3 +50,68 @@ def test_get_domains():
     response = client.get("/api/domains", headers=_auth_headers())
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+def test_delete_reports_cascades_records():
+    init_db()
+    report_id = save_report({
+        "metadata": {
+            "org_name": "Example Org",
+            "email": "ops@example.com",
+            "report_id": "example-report-1",
+            "date_range_begin": 1700000000,
+            "date_range_end": 1700003600,
+        },
+        "policy": {
+            "domain": "example.com",
+            "p": "none",
+            "sp": "none",
+            "pct": "100",
+        },
+        "records": [
+            {
+                "source_ip": "1.2.3.4",
+                "count": 5,
+                "disposition": "none",
+                "dkim": "pass",
+                "spf": "pass",
+            }
+        ],
+    })
+    other_report_id = save_report({
+        "metadata": {
+            "org_name": "Other Org",
+            "email": "ops@other.com",
+            "report_id": "other-report-1",
+            "date_range_begin": 1700000000,
+            "date_range_end": 1700003600,
+        },
+        "policy": {
+            "domain": "other.com",
+            "p": "none",
+            "sp": "none",
+            "pct": "100",
+        },
+        "records": [
+            {
+                "source_ip": "5.6.7.8",
+                "count": 3,
+                "disposition": "none",
+                "dkim": "pass",
+                "spf": "pass",
+            }
+        ],
+    })
+
+    response = client.delete("/api/reports?domain=example.com", headers=_auth_headers())
+    assert response.status_code == 200
+    assert response.json()["deleted"] == 1
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM reports WHERE id = ?", (report_id,))
+    assert c.fetchone()[0] == 0
+    c.execute("SELECT COUNT(*) FROM records WHERE report_id = ?", (report_id,))
+    assert c.fetchone()[0] == 0
+    c.execute("SELECT COUNT(*) FROM reports WHERE id = ?", (other_report_id,))
+    assert c.fetchone()[0] == 1
+    conn.close()

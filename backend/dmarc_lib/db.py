@@ -2,12 +2,14 @@ import sqlite3
 import json
 import os
 from pathlib import Path
+import datetime
 
 DB_PATH = os.environ.get('DB_PATH', 'dmarc_reports.db')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 def init_db():
@@ -347,11 +349,19 @@ def delete_reports(start_date=None, end_date=None, domain=None, org_name=None, d
         clauses.append('org_name = ?')
         params.append(org_name)
     where_clause = ' AND '.join(clauses) if clauses else '1=1'
-    sql = f'DELETE FROM reports WHERE {where_clause}'
-    c.execute(sql, params)
-    deleted = c.rowcount
+    c.execute(f"SELECT id FROM reports WHERE {where_clause}", params)
+    report_ids = [row[0] for row in c.fetchall()]
+    if not report_ids:
+        conn.close()
+        return 0
+
+    placeholders = ",".join(["?"] * len(report_ids))
+    c.execute(f"DELETE FROM records WHERE report_id IN ({placeholders})", report_ids)
+    c.execute(f"DELETE FROM reports WHERE id IN ({placeholders})", report_ids)
+    deleted = len(report_ids)
     conn.commit()
     conn.close()
+    return deleted
 def get_domain_stats():
     """Returns aggregated stats (Pass/Quarantine/Reject) for each unique domain."""
     conn = get_db()

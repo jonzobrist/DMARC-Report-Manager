@@ -10,6 +10,7 @@ backend/uploads
 # Virtual environments
 .venv
 *.log
+logs/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -52,3 +53,10 @@ cython_debug/
 .run
 .pnpm
 .vite
+frontend/node_modules/
+frontend/dist/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+junit.xml

@@ -56,21 +56,21 @@
 ## Proposed Work Groups (Minimal Context Switching)
 
 ### Group A: API Security & Auth Consistency
-- [ ] Remove duplicate unauthenticated `/api/upload` and keep only auth-protected version (`backend/web/api.py`)
-- [ ] Sanitize uploaded filenames and delete targets to prevent path traversal (`backend/web/api.py`)
-- [ ] Decide which endpoints are public vs authenticated and align backend + frontend + tests
+- [x] Remove duplicate unauthenticated `/api/upload` and keep only auth-protected version (`backend/web/api.py`)
+- [x] Sanitize uploaded filenames and delete targets to prevent path traversal (`backend/web/api.py`)
+- [x] Decide which endpoints are public vs authenticated and align backend + frontend + tests
 
 ### Group B: Database Integrity & Deletion Semantics
-- [ ] Fix `delete_reports` to import `datetime`, return deleted count, and clean up `records` (`backend/dmarc_lib/db.py`)
-- [ ] Add cascade delete behavior or explicit cleanup for `records` when reports are removed
-- [ ] Add deletion tests to verify report removal + record cleanup
+- [x] Fix `delete_reports` to import `datetime`, return deleted count, and clean up `records` (`backend/dmarc_lib/db.py`)
+- [x] Add cascade delete behavior or explicit cleanup for `records` when reports are removed
+- [x] Add deletion tests to verify report removal + record cleanup
 
 ### Group C: Startup & Environment Reliability
 - [ ] Call `init_db()` at API startup to ensure schema + default admin exist
 - [ ] Guard production configs (require `SECRET_KEY`, avoid insecure defaults)
 
 ### Group D: Test Suite Updates
-- [ ] Update API tests to authenticate before calling protected endpoints (`tests/test_api.py`)
+- [x] Update API tests to authenticate before calling protected endpoints (`tests/test_api.py`)
 - [ ] Add upload tests (auth + invalid filename)
 - [ ] Fix `test_upload_logic.py` to match current `save_report` signature
 

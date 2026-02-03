@@ -51,3 +51,6 @@ DMARC Report Manager is a self-hosted tool for parsing, analyzing, and visualizi
 
 ## Repo Hygiene
 - Keep `.gitignore` updated to exclude build artifacts, virtual environments, test outputs, and logs so they are never committed.
+
+## Task Tracking
+- Update `TODO.md` whenever a task is completed so the task list remains current.

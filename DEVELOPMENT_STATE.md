@@ -45,6 +45,6 @@ DMARC Report Manager is a self-hosted tool for parsing, analyzing, and visualizi
 
 
 ## Getting Started for New Developers
-1. **Backend**: `uv sync` to install dependencies. Run with `bin/start`.
+1. **Backend (Required)**: Use `uv` for Python virtual environments. Run `uv sync` to create the `.venv` and install dependencies, then start with `bin/start`.
 2. **Frontend**: `cd frontend && pnpm install`. Dev server starts with `bin/start`.
 3. **Database**: The `dmarc_reports.db` file is automatically initialized on first run. Use CLI tools in `bin/` to seed data.

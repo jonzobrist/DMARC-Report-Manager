@@ -137,31 +137,6 @@ async def get_version():
         return {"version": "0.0.0"}
 
 
-@app.post("/api/upload")
-async def upload_files(files: List[UploadFile] = File(...), background_tasks: BackgroundTasks = None):
-    uploaded_files = []
-    
-    for file in files:
-        file_path = UPLOAD_DIR / file.filename
-        try:
-            with file_path.open("wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            
-            uploaded_files.append(file.filename)
-            
-            # Auto-process after upload
-            if background_tasks:
-                background_tasks.add_task(process_single_file, file_path)
-            else:
-                 # If no background tasks context (unlikely in Fastapi route), do sync
-                 process_single_file(file_path)
-
-        except Exception as e:
-            print(f"Error saving {file.filename}: {e}")
-            return JSONResponse(status_code=500, content={"message": f"Failed to save {file.filename}"})
-            
-    return {"message": f"Uploaded {len(uploaded_files)} files", "files": uploaded_files}
-
 def process_single_file(file_path: Path):
     try:
         print(f"Processing uploaded file: {file_path}")
@@ -171,8 +146,14 @@ def process_single_file(file_path: Path):
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
 
+def _sanitize_filename(filename: str) -> str:
+    safe_name = Path(filename).name
+    if not safe_name or safe_name != filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return safe_name
+
 @app.get("/api/files")
-async def list_files():
+async def list_files(current_user: dict = Depends(get_current_user)):
     files = []
     for f in UPLOAD_DIR.glob("*"):
         if f.is_file():
@@ -188,13 +169,14 @@ async def list_files():
     return files
 
 @app.delete("/api/files/{filename}")
-async def delete_file(filename: str):
-    file_path = UPLOAD_DIR / filename
+async def delete_file(filename: str, current_user: dict = Depends(get_current_user)):
+    safe_name = _sanitize_filename(filename)
+    file_path = UPLOAD_DIR / safe_name
     if not file_path.exists():
         raise HTTPException(status_code=404, message="File not found")
     try:
         file_path.unlink()
-        return {"message": f"Deleted {filename}"}
+        return {"message": f"Deleted {safe_name}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -236,21 +218,25 @@ async def report_detail(id: str, current_user: dict = Depends(get_current_user))
     return report
 
 @app.post("/api/upload")
-async def upload_files(files: List[UploadFile] = File(...), background_tasks: BackgroundTasks = None, current_user: dict = Depends(get_current_user)):
-    # ... (same logic)
+async def upload_files(
+    files: List[UploadFile] = File(...),
+    background_tasks: BackgroundTasks = None,
+    current_user: dict = Depends(get_current_user),
+):
     uploaded_files = []
     for file in files:
-        file_path = UPLOAD_DIR / file.filename
+        safe_name = _sanitize_filename(file.filename)
+        file_path = UPLOAD_DIR / safe_name
         try:
             with file_path.open("wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            uploaded_files.append(file.filename)
+            uploaded_files.append(safe_name)
             if background_tasks:
                 background_tasks.add_task(process_single_file, file_path)
             else:
                 process_single_file(file_path)
         except Exception as e:
-            return JSONResponse(status_code=500, content={"message": f"Failed to save {file.filename}"})
+            return JSONResponse(status_code=500, content={"message": f"Failed to save {safe_name}"})
     return {"message": f"Uploaded {len(uploaded_files)} files", "files": uploaded_files}
 
 @app.delete("/api/reports")
@@ -294,7 +280,5 @@ async def remove_user(id: int, admin: dict = Depends(get_admin_user)):
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
     delete_user(id)
     return {"message": "User deleted successfully"}
-
-
 
 

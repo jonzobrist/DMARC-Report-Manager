@@ -12,6 +12,9 @@
 
 - [x] Write comprehensive unit tests for parsing and API
 - [ ] CI pipeline for automated testing
+- [ ] Security + API hardening
+- [ ] Data integrity + DB cleanup
+- [ ] Backend reliability polish
 
 
 ## Frontend
@@ -49,6 +52,31 @@
 - [x] Manual testing of frontend UI in Chrome
 - [x] Automated test suite integration
 
+
+## Proposed Work Groups (Minimal Context Switching)
+
+### Group A: API Security & Auth Consistency
+- [ ] Remove duplicate unauthenticated `/api/upload` and keep only auth-protected version (`backend/web/api.py`)
+- [ ] Sanitize uploaded filenames and delete targets to prevent path traversal (`backend/web/api.py`)
+- [ ] Decide which endpoints are public vs authenticated and align backend + frontend + tests
+
+### Group B: Database Integrity & Deletion Semantics
+- [ ] Fix `delete_reports` to import `datetime`, return deleted count, and clean up `records` (`backend/dmarc_lib/db.py`)
+- [ ] Add cascade delete behavior or explicit cleanup for `records` when reports are removed
+- [ ] Add deletion tests to verify report removal + record cleanup
+
+### Group C: Startup & Environment Reliability
+- [ ] Call `init_db()` at API startup to ensure schema + default admin exist
+- [ ] Guard production configs (require `SECRET_KEY`, avoid insecure defaults)
+
+### Group D: Test Suite Updates
+- [ ] Update API tests to authenticate before calling protected endpoints (`tests/test_api.py`)
+- [ ] Add upload tests (auth + invalid filename)
+- [ ] Fix `test_upload_logic.py` to match current `save_report` signature
+
+### Group E: Parsing Robustness & Format Support
+- [ ] Harden XML parsing and guard against malformed/huge inputs (`backend/dmarc_lib/parser.py`)
+- [ ] Verify README claim of XZ support; add `.xz` support or update docs
 
 
 ## Future Enhancements

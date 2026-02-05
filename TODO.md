@@ -66,8 +66,8 @@
 - [x] Add deletion tests to verify report removal + record cleanup
 
 ### Group C: Startup & Environment Reliability
-- [ ] Call `init_db()` at API startup to ensure schema + default admin exist
-- [ ] Guard production configs (require `SECRET_KEY`, avoid insecure defaults)
+- [x] Call `init_db()` at API startup to ensure schema + default admin exist
+- [x] Guard production configs (require `SECRET_KEY`, avoid insecure defaults)
 
 ### Group D: Test Suite Updates
 - [x] Update API tests to authenticate before calling protected endpoints (`tests/test_api.py`)

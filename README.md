@@ -139,6 +139,7 @@ export DMARC_API_URL="http://dmarc.example.com"
 
 > [!IMPORTANT]
 > **Documentation Rule**: When adding new utilities, scripts, or significant features, you **must** update the corresponding documentation in [README.md](README.md), [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md), and [API.md](API.md) (if applicable).
+> **Task Tracking Rule**: When completing a task, you **must** update [TODO.md](TODO.md) so the task list stays current.
 
 
 ## License

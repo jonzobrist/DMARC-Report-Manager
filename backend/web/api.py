@@ -52,6 +52,10 @@ app.add_middleware(
     expose_headers=["Content-Disposition", "X-Total-Count"],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    init_db()
+
 
 # Pydantic models
 class UserProfile(BaseModel):
@@ -280,5 +284,4 @@ async def remove_user(id: int, admin: dict = Depends(get_admin_user)):
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
     delete_user(id)
     return {"message": "User deleted successfully"}
-
 

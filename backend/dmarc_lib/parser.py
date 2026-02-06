@@ -2,6 +2,22 @@ import xmltodict
 import gzip
 import zipfile
 import os
+import lzma
+
+MAX_REPORT_BYTES = int(os.environ.get("DMARC_MAX_REPORT_BYTES", str(20 * 1024 * 1024)))
+
+def _read_with_limit(stream, max_bytes: int) -> bytes:
+    chunks = []
+    total = 0
+    while True:
+        chunk = stream.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise ValueError("Report exceeds maximum allowed size")
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 def parse_report(file_path):
     """
@@ -12,20 +28,33 @@ def parse_report(file_path):
     content = None
     
     # Handle different file types
-    if str(file_path).endswith('.gz'):
-        with gzip.open(file_path, 'rb') as f:
-            content = f.read()
-    elif str(file_path).endswith('.zip'):
-        with zipfile.ZipFile(file_path, 'r') as z:
+    file_path_str = str(file_path)
+    if file_path_str.endswith(".gz"):
+        with gzip.open(file_path, "rb") as f:
+            content = _read_with_limit(f, MAX_REPORT_BYTES)
+    elif file_path_str.endswith(".xz"):
+        with lzma.open(file_path, "rb") as f:
+            content = _read_with_limit(f, MAX_REPORT_BYTES)
+    elif file_path_str.endswith(".zip"):
+        with zipfile.ZipFile(file_path, "r") as z:
             # Assume first XML file in zip is the report
+            xml_name = None
             for name in z.namelist():
-                if name.endswith('.xml'):
-                    with z.open(name) as f:
-                        content = f.read()
+                if name.endswith(".xml"):
+                    xml_name = name
                     break
+            if not xml_name:
+                raise ValueError("No XML file found in zip archive")
+            info = z.getinfo(xml_name)
+            if info.file_size > MAX_REPORT_BYTES:
+                raise ValueError("Report exceeds maximum allowed size")
+            with z.open(xml_name) as f:
+                content = _read_with_limit(f, MAX_REPORT_BYTES)
     else:
-        with open(file_path, 'rb') as f:
-            content = f.read()
+        if os.path.getsize(file_path_str) > MAX_REPORT_BYTES:
+            raise ValueError("Report exceeds maximum allowed size")
+        with open(file_path, "rb") as f:
+            content = _read_with_limit(f, MAX_REPORT_BYTES)
             
     if not content:
         raise ValueError("Could not read content from file")

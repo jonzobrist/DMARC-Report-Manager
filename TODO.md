@@ -68,15 +68,19 @@
 ### Group C: Startup & Environment Reliability
 - [x] Call `init_db()` at API startup to ensure schema + default admin exist
 - [x] Guard production configs (require `SECRET_KEY`, avoid insecure defaults)
+- [x] Replace FastAPI `on_event` startup with lifespan handler
+
+### Deprecation Cleanup
+- [x] Use timezone-aware UTC for JWT expiry timestamps
 
 ### Group D: Test Suite Updates
 - [x] Update API tests to authenticate before calling protected endpoints (`tests/test_api.py`)
-- [ ] Add upload tests (auth + invalid filename)
-- [ ] Fix `test_upload_logic.py` to match current `save_report` signature
+- [x] Add upload tests (auth + invalid filename)
+- [x] Fix `test_upload_logic.py` to match current `save_report` signature
 
 ### Group E: Parsing Robustness & Format Support
-- [ ] Harden XML parsing and guard against malformed/huge inputs (`backend/dmarc_lib/parser.py`)
-- [ ] Verify README claim of XZ support; add `.xz` support or update docs
+- [x] Harden XML parsing and guard against malformed/huge inputs (`backend/dmarc_lib/parser.py`)
+- [x] Verify README claim of XZ support; add `.xz` support or update docs
 
 
 ## Future Enhancements

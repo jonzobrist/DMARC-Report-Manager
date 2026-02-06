@@ -1,4 +1,5 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File, Depends, Request
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -29,7 +30,12 @@ from backend.dmarc_lib.db import (
 
 
 
-app = FastAPI(title="DMARC Report Manager")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(title="DMARC Report Manager", lifespan=lifespan)
 
 # CONFIG
 UPLOAD_DIR = Path("backend/uploads")
@@ -52,9 +58,6 @@ app.add_middleware(
     expose_headers=["Content-Disposition", "X-Total-Count"],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    init_db()
 
 
 # Pydantic models
@@ -111,7 +114,7 @@ async def login(req: LoginRequest):
     if not bcrypt.checkpw(password_bytes, password_hash_bytes):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
-    expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {"sub": user['username'], "exp": expires, "role": user['role']}
     token = jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
@@ -284,4 +287,3 @@ async def remove_user(id: int, admin: dict = Depends(get_admin_user)):
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
     delete_user(id)
     return {"message": "User deleted successfully"}
-

@@ -2,7 +2,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File, D
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
 from typing import List, Optional
 from pydantic import BaseModel
 import jwt
@@ -43,7 +43,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 from backend.web import config
 
-security = HTTPBearer()
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 # Enable CORS for Frontend
@@ -79,9 +79,23 @@ class UserCreate(UserProfile):
     password: str
     role: str = "user"
 
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
 
 # Auth Helper
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
+    api_key: Optional[str] = Depends(api_key_header),
+):
+    # Check API key first
+    if api_key and config.DMARC_API_KEY and api_key == config.DMARC_API_KEY:
+        return {"username": "api", "role": "admin", "id": 0}
+
+    # Fall back to JWT
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = jwt.decode(credentials.credentials, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         username: str = payload.get("sub")
@@ -129,6 +143,23 @@ async def login(req: LoginRequest):
             "role": user['role']
         }
     }
+
+@app.post("/api/refresh")
+async def refresh_token(current_user: dict = Depends(get_current_user)):
+    expires = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {"sub": current_user['username'], "exp": expires, "role": current_user['role']}
+    token = jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.put("/api/user/password")
+async def change_password(req: PasswordChange, current_user: dict = Depends(get_current_user)):
+    if not current_user.get('password_hash'):
+        raise HTTPException(status_code=400, detail="Password change not supported for API key users")
+    if not bcrypt.checkpw(req.current_password.encode('utf-8'), current_user['password_hash'].encode('utf-8')):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    new_hash = bcrypt.hashpw(req.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    update_user_profile(current_user['id'], {"password_hash": new_hash})
+    return {"message": "Password updated successfully"}
 
 @app.get("/")
 async def root():

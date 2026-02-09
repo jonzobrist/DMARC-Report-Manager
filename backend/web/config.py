@@ -47,6 +47,8 @@ DB_PATH = os.environ.get("DB_PATH", "dmarc_reports.db")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
+DMARC_API_KEY = os.environ.get("DMARC_API_KEY", "")
+
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development").lower()
 if ENVIRONMENT == "production" and (not SECRET_KEY or SECRET_KEY == "super-secret-key-change-me-in-production"):
     raise RuntimeError("SECRET_KEY must be set to a strong value in production.")

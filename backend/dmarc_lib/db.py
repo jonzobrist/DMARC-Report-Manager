@@ -62,17 +62,25 @@ def init_db():
 
 def _seed_default_user(conn):
     import bcrypt
+    import secrets
     
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM users")
     if c.fetchone()[0] == 0:
-        password = "admin123".encode('utf-8')
+        password_str = secrets.token_urlsafe(16)
+        password = password_str.encode('utf-8')
         hashed_password = bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
         c.execute('''
             INSERT INTO users (username, password_hash, first_name, last_name, email, phone, role)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', ("admin", hashed_password, "Admin", "User", "admin@example.com", "555-0100", "admin"))
         conn.commit()
+        print(f"\n{'='*50}")
+        print(f"  Default admin account created!")
+        print(f"  Username: admin")
+        print(f"  Password: {password_str}")
+        print(f"  ⚠️  Change this password after first login!")
+        print(f"{'='*50}\n")
 
 
 
@@ -458,7 +466,7 @@ def update_user_profile(user_id, data):
     params = []
     
     # Only update fields that are present in data and not None
-    for field in ['first_name', 'last_name', 'email', 'phone', 'role']:
+    for field in ['first_name', 'last_name', 'email', 'phone', 'role', 'password_hash']:
         if field in data and data[field] is not None:
             update_fields.append(field)
             params.append(data[field])

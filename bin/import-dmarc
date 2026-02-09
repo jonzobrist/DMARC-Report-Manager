@@ -54,7 +54,11 @@ upload_file() {
   fi
   echo "Uploading '$file'..."
   # Use curl to POST the file. -F sends multipart/form-data.
-  response=$(curl -s -w "%{http_code}" -F "files=@${file}" "$API_URL")
+  local auth_args=()
+  if [[ -n "$DMARC_API_KEY" ]]; then
+    auth_args+=(-H "X-API-Key: $DMARC_API_KEY")
+  fi
+  response=$(curl -s -w "%{http_code}" "${auth_args[@]}" -F "files=@${file}" "$API_URL")
   http_code="${response: -3}"
   body="${response:0:${#response}-3}"
   if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then

@@ -25,7 +25,9 @@ from backend.dmarc_lib.db import (
     init_db, save_report, get_stats, get_reports_list, 
     get_report_detail, delete_reports, get_domain_stats, 
     get_user_profile, update_user_profile, get_user_by_username,
-    list_users, create_user, delete_user
+    list_users, create_user, delete_user,
+    create_api_key, get_api_keys_for_user, delete_api_key,
+    get_user_by_api_key, get_api_key_owner
 )
 
 
@@ -83,15 +85,40 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str
 
+class ApiKeyCreate(BaseModel):
+    name: str  # Label/description for the key
+
+class ApiKeyResponse(BaseModel):
+    id: int
+    name: str
+    created_at: str
+    last_used_at: Optional[str] = None
+    active: int
+
+class ApiKeyCreatedResponse(BaseModel):
+    id: int
+    name: str
+    key: str  # The raw key - only returned once at creation!
+
 
 # Auth Helper
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
     api_key: Optional[str] = Depends(api_key_header),
 ):
-    # Check API key first
-    if api_key and config.DMARC_API_KEY and api_key == config.DMARC_API_KEY:
-        return {"username": "api", "role": "admin", "id": 0}
+    # Check API key first (from X-API-Key header)
+    if api_key:
+        # Try per-user API keys from database first
+        user = get_user_by_api_key(api_key)
+        if user:
+            return user
+        
+        # Fallback to legacy shared API key from env var (if configured)
+        if config.DMARC_API_KEY and api_key == config.DMARC_API_KEY:
+            return {"username": "api", "role": "admin", "id": 0}
+        
+        # API key provided but not valid
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
     # Fall back to JWT
     if not credentials:
@@ -160,6 +187,70 @@ async def change_password(req: PasswordChange, current_user: dict = Depends(get_
     new_hash = bcrypt.hashpw(req.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     update_user_profile(current_user['id'], {"password_hash": new_hash})
     return {"message": "Password updated successfully"}
+
+
+# ============================================================================
+# API Key Management - User Endpoints
+# ============================================================================
+
+@app.post("/api/user/api-keys", response_model=ApiKeyCreatedResponse)
+async def create_user_api_key(req: ApiKeyCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new API key for the current user. The raw key is only returned once!"""
+    if current_user.get('id') == 0:
+        raise HTTPException(status_code=400, detail="Cannot create API keys for legacy API user")
+    
+    key_id, raw_key = create_api_key(current_user['id'], req.name)
+    return {"id": key_id, "name": req.name, "key": raw_key}
+
+
+@app.get("/api/user/api-keys", response_model=List[ApiKeyResponse])
+async def list_user_api_keys(current_user: dict = Depends(get_current_user)):
+    """List all API keys for the current user (without revealing the actual keys)."""
+    if current_user.get('id') == 0:
+        return []
+    
+    return get_api_keys_for_user(current_user['id'])
+
+
+@app.delete("/api/user/api-keys/{key_id}")
+async def revoke_user_api_key(key_id: int, current_user: dict = Depends(get_current_user)):
+    """Revoke (delete) an API key belonging to the current user."""
+    if current_user.get('id') == 0:
+        raise HTTPException(status_code=400, detail="Cannot manage API keys for legacy API user")
+    
+    deleted = delete_api_key(key_id, user_id=current_user['id'])
+    if not deleted:
+        raise HTTPException(status_code=404, detail="API key not found or does not belong to you")
+    
+    return {"message": "API key revoked successfully"}
+
+
+# ============================================================================
+# API Key Management - Admin Endpoints
+# ============================================================================
+
+@app.get("/api/users/{user_id}/api-keys", response_model=List[ApiKeyResponse])
+async def admin_list_user_api_keys(user_id: int, admin: dict = Depends(get_admin_user)):
+    """Admin: List all API keys for a specific user."""
+    user = get_user_profile(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return get_api_keys_for_user(user_id)
+
+
+@app.delete("/api/users/{user_id}/api-keys/{key_id}")
+async def admin_revoke_user_api_key(user_id: int, key_id: int, admin: dict = Depends(get_admin_user)):
+    """Admin: Revoke (delete) an API key belonging to a specific user."""
+    # Verify the key belongs to the specified user
+    key_owner = get_api_key_owner(key_id)
+    if key_owner is None:
+        raise HTTPException(status_code=404, detail="API key not found")
+    if key_owner != user_id:
+        raise HTTPException(status_code=400, detail="API key does not belong to this user")
+    
+    delete_api_key(key_id)
+    return {"message": "API key revoked successfully"}
 
 @app.get("/")
 async def root():

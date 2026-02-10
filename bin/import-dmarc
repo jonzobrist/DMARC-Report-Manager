@@ -1,10 +1,26 @@
 #!/usr/bin/env bash
 
 # import-dmarc: Upload DMARC report files to the DMARC Report Manager backend.
+#
 # Usage: ./import-dmarc <file-or-directory> [additional files...]
+#
 # If a directory is provided, all files inside it (non-recursive) will be uploaded.
 # The script uses the backend API endpoint /api/upload (POST multipart/form-data).
 # Ensure the backend is running (default http://localhost:8000).
+#
+# AUTHENTICATION:
+#   Set DMARC_API_KEY in your environment or .env file.
+#   API keys can be created per-user via the web UI (Profile -> API Keys)
+#   or via the API: POST /api/user/api-keys with {"name": "my-key-label"}
+#
+#   Example:
+#     export DMARC_API_KEY="your-api-key-here"
+#     ./import-dmarc ~/Downloads/DMARC/
+#
+#   The .env file in the project root is automatically loaded if present.
+#
+# OPTIONS:
+#   --api-url URL    Override the backend API URL (default: DMARC_API_URL or http://localhost:8000)
 
 # Load .env if it exists in project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

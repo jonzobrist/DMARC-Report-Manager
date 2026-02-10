@@ -1,10 +1,17 @@
 import sqlite3
 import json
 import os
+import secrets
+import hashlib
 from pathlib import Path
 import datetime
 
 DB_PATH = os.environ.get('DB_PATH', 'dmarc_reports.db')
+
+
+def _hash_api_key(raw_key: str) -> str:
+    """Hash an API key using SHA-256 for storage."""
+    return hashlib.sha256(raw_key.encode('utf-8')).hexdigest()
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -55,6 +62,23 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            key_hash TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used_at TIMESTAMP,
+            active INTEGER DEFAULT 1,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    ''')
+    
+    # Create index for faster key lookups
+    c.execute('CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)')
     
     conn.commit()
     _seed_default_user(conn)
@@ -489,3 +513,113 @@ def update_user_profile(user_id, data):
 
     conn.close()
     return True
+
+
+# ============================================================================
+# API Key Management
+# ============================================================================
+
+def create_api_key(user_id: int, name: str) -> tuple[int, str]:
+    """
+    Create a new API key for a user.
+    Returns (key_id, raw_key) - the raw key is only available at creation time.
+    """
+    raw_key = secrets.token_urlsafe(32)
+    key_hash = _hash_api_key(raw_key)
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO api_keys (user_id, key_hash, name)
+        VALUES (?, ?, ?)
+    ''', (user_id, key_hash, name))
+    key_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    
+    return key_id, raw_key
+
+
+def get_api_keys_for_user(user_id: int) -> list[dict]:
+    """List all API keys for a user (without revealing the actual keys)."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT id, name, created_at, last_used_at, active
+        FROM api_keys
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    ''', (user_id,))
+    keys = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return keys
+
+
+def delete_api_key(key_id: int, user_id: int = None) -> bool:
+    """
+    Delete an API key by ID.
+    If user_id is provided, ensures the key belongs to that user.
+    Returns True if a key was deleted.
+    """
+    conn = get_db()
+    c = conn.cursor()
+    
+    if user_id is not None:
+        c.execute('DELETE FROM api_keys WHERE id = ? AND user_id = ?', (key_id, user_id))
+    else:
+        c.execute('DELETE FROM api_keys WHERE id = ?', (key_id,))
+    
+    deleted = c.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
+
+
+def get_user_by_api_key(raw_key: str) -> dict | None:
+    """
+    Look up a user by their API key.
+    Updates the last_used_at timestamp if found.
+    Returns the user dict or None.
+    """
+    key_hash = _hash_api_key(raw_key)
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    # Find the key and its associated user
+    c.execute('''
+        SELECT ak.id as key_id, ak.user_id, u.*
+        FROM api_keys ak
+        JOIN users u ON ak.user_id = u.id
+        WHERE ak.key_hash = ? AND ak.active = 1
+    ''', (key_hash,))
+    
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return None
+    
+    key_id = row['key_id']
+    
+    # Update last_used_at
+    c.execute('''
+        UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?
+    ''', (key_id,))
+    conn.commit()
+    
+    # Return user data (exclude key_id from user dict)
+    user = dict(row)
+    del user['key_id']
+    conn.close()
+    
+    return user
+
+
+def get_api_key_owner(key_id: int) -> int | None:
+    """Get the user_id that owns an API key."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT user_id FROM api_keys WHERE id = ?', (key_id,))
+    row = c.fetchone()
+    conn.close()
+    return row['user_id'] if row else None

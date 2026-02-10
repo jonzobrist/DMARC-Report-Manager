@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 
-# Load .env file if it exists
-load_dotenv()
+# Load .env file from project root (explicit path for reliability)
+_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(_env_path)
 
 def get_list(env_var: str, default: List[str] = []) -> List[str]:
     val = os.environ.get(env_var)

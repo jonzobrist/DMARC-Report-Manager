@@ -6,18 +6,11 @@
 #
 # If a directory is provided, all files inside it (non-recursive) will be uploaded.
 # The script uses the backend API endpoint /api/upload (POST multipart/form-data).
-# Ensure the backend is running (default http://localhost:8000).
 #
-# AUTHENTICATION:
-#   Set DMARC_API_KEY in your environment or .env file.
-#   API keys can be created per-user via the web UI (Profile -> API Keys)
-#   or via the API: POST /api/user/api-keys with {"name": "my-key-label"}
-#
-#   Example:
-#     export DMARC_API_KEY="your-api-key-here"
-#     ./import-dmarc ~/Downloads/DMARC/
-#
-#   The .env file in the project root is automatically loaded if present.
+# AUTHENTICATION (tried in order):
+#   1. DMARC_API_KEY env var → X-API-Key header
+#   2. DMARC_USERNAME + DMARC_PASSWORD env vars → JWT login
+#   Set these in your environment or .env file.
 #
 # OPTIONS:
 #   --api-url URL    Override the backend API URL (default: DMARC_API_URL or http://localhost:8000)
@@ -62,6 +55,29 @@ if [[ $# -lt 1 ]]; then
   exit 1
 fi
 
+# Resolve auth - try API key first, then JWT login
+AUTH_ARGS=()
+if [[ -n "$DMARC_API_KEY" ]]; then
+  AUTH_ARGS=(-H "X-API-Key: $DMARC_API_KEY")
+  echo "Auth: Using API key"
+elif [[ -n "$DMARC_USERNAME" && -n "$DMARC_PASSWORD" ]]; then
+  echo "Auth: Logging in as $DMARC_USERNAME..."
+  LOGIN_URL="${API_BASE%/}/api/login"
+  login_response=$(curl -s -X POST "$LOGIN_URL" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$DMARC_USERNAME\",\"password\":\"$DMARC_PASSWORD\"}")
+  
+  TOKEN=$(echo "$login_response" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+  if [[ -z "$TOKEN" ]]; then
+    echo "Login failed: $login_response"
+    exit 1
+  fi
+  AUTH_ARGS=(-H "Authorization: Bearer $TOKEN")
+  echo "Auth: Login successful"
+else
+  echo "Warning: No auth configured. Set DMARC_API_KEY or DMARC_USERNAME+DMARC_PASSWORD in .env"
+fi
+
 upload_file() {
   local file="$1"
   if [[ ! -f "$file" ]]; then
@@ -69,12 +85,7 @@ upload_file() {
     return
   fi
   echo "Uploading '$file'..."
-  # Use curl to POST the file. -F sends multipart/form-data.
-  local auth_args=()
-  if [[ -n "$DMARC_API_KEY" ]]; then
-    auth_args+=(-H "X-API-Key: $DMARC_API_KEY")
-  fi
-  response=$(curl -s -w "%{http_code}" "${auth_args[@]}" -F "files=@${file}" "$API_URL")
+  response=$(curl -s -w "%{http_code}" "${AUTH_ARGS[@]}" -F "files=@${file}" "$API_URL")
   http_code="${response: -3}"
   body="${response:0:${#response}-3}"
   if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
@@ -86,7 +97,6 @@ upload_file() {
 
 for path in "$@"; do
   if [[ -d "$path" ]]; then
-    # Iterate over files in directory (non-recursive)
     for f in "$path"/*; do
       [[ -e "$f" ]] || continue
       upload_file "$f"

@@ -83,6 +83,13 @@
 - [x] Verify README claim of XZ support; add `.xz` support or update docs
 
 
+## Auth & User Management
+- [ ] Fix pre-shared API key auth (env var `DMARC_API_KEY` not loading via `load_dotenv` — fix path resolution)
+- [ ] Per-user API keys: DB table, generate/list/revoke endpoints, hashed storage
+- [ ] Password change UI in frontend (backend endpoint `PUT /api/user/password` exists)
+- [ ] User management UI: edit user details, change roles
+- [ ] Admin: reset other users' passwords
+
 ## Future Enhancements
 - [ ] Email notifications for DMARC failures
 - [ ] Integration with external monitoring tools

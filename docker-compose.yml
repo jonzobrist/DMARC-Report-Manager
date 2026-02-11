@@ -1,0 +1,40 @@
+services:
+  dmarc-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://dmarc-api.zlyxy.me}
+    container_name: dmarc-api
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    volumes:
+      - dmarc-data:/app/data
+      - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/data/dmarc_reports.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8100/api/version')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  dmarc-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://dmarc-api.zlyxy.me}
+    container_name: dmarc-frontend
+    restart: unless-stopped
+    ports:
+      - "8101:80"
+    depends_on:
+      dmarc-api:
+        condition: service_healthy
+
+volumes:
+  dmarc-data:

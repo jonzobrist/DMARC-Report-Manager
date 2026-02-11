@@ -1,0 +1,52 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Run backend tests
+        run: |
+          uv sync
+          uv run pytest tests/ -v
+
+  build-and-deploy:
+    runs-on: self-hosted
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker compose build --no-cache
+
+      - name: Deploy
+        run: |
+          # Copy current DB out of old container if it exists
+          docker cp dmarc-report-manager:/app/data/dmarc_reports.db /tmp/dmarc_backup.db 2>/dev/null || true
+          
+          # Stop old container
+          docker compose down
+          
+          # Start new container
+          docker compose up -d
+          
+          # Wait for health check
+          echo "Waiting for health check..."
+          sleep 5
+          docker compose ps
+
+      - name: Verify deployment
+        run: |
+          curl -sf http://localhost:8100/health || (echo "Health check failed!" && docker compose logs && exit 1)

@@ -47,7 +47,7 @@ const Layout = ({ children }) => {
         <div className={`layout-container ${!isSidebarOpen ? 'collapsed' : ''}`}>
             <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
                 <div className="sidebar-header">
-                    <Shield size={28} className="logo-icon" />
+                    <img src="/logo-icon.png" alt="DMARC Logo" className="logo-icon" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                     {isSidebarOpen && <span className="logo-text">DMARC Mgr</span>}
                 </div>
 

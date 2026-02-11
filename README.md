@@ -53,6 +53,79 @@ The backend provides a RESTful API for integration and automation. See [API.md](
     pnpm install
     ```
 
+### Docker Deployment
+
+The easiest way to run DMARC Report Manager in production.
+
+#### Prerequisites
+
+- Docker and Docker Compose (v2+)
+
+#### Quick Start
+
+```bash
+# Clone and enter the repo
+git clone https://github.com/jonzobrist/DMARC-Report-Manager.git
+cd DMARC-Report-Manager
+
+# Copy and edit environment config
+cp .env.example .env   # or edit the existing .env
+# At minimum, set SECRET_KEY and ALLOWED_HOSTS
+
+# Build both images
+docker compose build
+
+# Start the stack
+docker compose up -d
+```
+
+This starts:
+- **dmarc-api** on port `8100` — FastAPI backend with SQLite
+- **dmarc-frontend** on port `8101` — Vite-built React app served by nginx
+
+The frontend waits for the API healthcheck before starting.
+
+#### Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `SECRET_KEY` | *(required)* | JWT signing key |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | CORS/host validation |
+| `VITE_API_URL` | `http://localhost:8100` | API URL baked into frontend at build time |
+| `DB_PATH` | `/app/data/dmarc_reports.db` | SQLite path inside container (mapped to `dmarc-data` volume) |
+
+#### Rebuilding After Updates
+
+```bash
+git pull
+docker compose build
+docker compose up -d
+```
+
+The SQLite database is persisted in a Docker volume (`dmarc-data`), so rebuilds won't lose data.
+
+#### Importing Reports (Docker)
+
+```bash
+# Copy reports into the running container and import
+docker cp ~/Downloads/DMARC/ dmarc-api:/tmp/dmarc-reports/
+docker exec dmarc-api uv run python -m bin.import_dmarc /tmp/dmarc-reports/
+
+# Or use the API directly
+curl -X POST http://localhost:8100/api/reports/upload \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@report.xml.gz"
+```
+
+#### Stopping
+
+```bash
+docker compose down          # Stop containers (keeps data volume)
+docker compose down -v       # Stop and remove data volume (⚠️ deletes DB)
+```
+
+---
+
 ## Usage
 
 #### Configuration

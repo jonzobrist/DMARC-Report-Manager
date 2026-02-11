@@ -117,16 +117,23 @@ const Dashboard = () => {
     };
 
     const handleExportPDF = async () => {
-        if (!user) return;
+        const token = user?.token || Cookies.get('auth_token');
+        if (!token) {
+            alert("No session found. Please log in.");
+            return;
+        }
         try {
             const startTs = Math.floor(new Date(dateRange.start).getTime() / 1000);
-            const endTs = Math.floor(new Date(dateRange.end).getTime() / 1000 + 86399); // End of day
+            const endTs = Math.floor(new Date(dateRange.end).getTime() / 1000 + 86399);
 
             const res = await fetch(`${API_BASE_URL}/api/stats/pdf?start=${startTs}&end=${endTs}`, {
-                headers: { 'Authorization': `Bearer ${user.token}` }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (!res.ok) throw new Error("Failed to generate PDF");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ detail: "Unknown error" }));
+                throw new Error(errorData.detail || "Failed to generate PDF");
+            }
 
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);

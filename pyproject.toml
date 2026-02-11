@@ -18,5 +18,6 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "slowapi>=0.1.9",
     "fpdf2>=2.8.5",
+    "matplotlib>=3.10.8",
 ]
 

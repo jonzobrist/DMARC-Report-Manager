@@ -377,7 +377,7 @@ async def stats_pdf(start: Optional[int] = None, end: Optional[int] = None, curr
         e = datetime.datetime.fromtimestamp(end).strftime('%Y-%m-%d')
         date_range = f"Until {e}"
         
-    pdf_bytes = generate_summary_pdf(data, date_range)
+    pdf_bytes = bytes(generate_summary_pdf(data, date_range))
     
     return Response(
         content=pdf_bytes,

@@ -403,6 +403,26 @@ async def add_user(user: UserCreate, admin: dict = Depends(get_admin_user)):
         raise HTTPException(status_code=400, detail="Username or email already exists")
     return {"id": new_id, "message": "User created successfully"}
 
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+
+@app.put("/api/users/{id}")
+async def update_user(id: int, user: UserUpdate, admin: dict = Depends(get_admin_user)):
+    updates = {k: v for k, v in user.dict().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    if "role" in updates and updates["role"] not in ("admin", "user"):
+        raise HTTPException(status_code=400, detail="Role must be 'admin' or 'user'")
+    success = update_user_profile(id, updates)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User updated successfully"}
+
 @app.delete("/api/users/{id}")
 async def remove_user(id: int, admin: dict = Depends(get_admin_user)):
     if id == admin['id']:

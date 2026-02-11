@@ -1,5 +1,5 @@
 # DMARC Report Manager - Backend (FastAPI + uvicorn)
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
@@ -11,7 +11,6 @@ RUN uv sync --no-dev --no-install-project
 COPY backend/ ./backend/
 COPY main.py ./
 COPY bin/ ./bin/
-COPY .env ./.env
 
 # Data volume for SQLite DB
 VOLUME /app/data

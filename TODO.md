@@ -26,9 +26,9 @@
 - [x] Enhanced filtering and search UI
 
 
-- [ ] Responsive design for mobile devices
-- [ ] Dark mode support
-- [ ] End-to-end tests (Cypress or Playwright)
+- [x] Responsive design for mobile devices
+- [x] Dark mode support
+- [x] End-to-end tests (Cypress or Playwright)
 
 ## CLI Tools
 - [x] `bin/import-dmarc`: Batch upload reports via API
@@ -84,17 +84,28 @@
 
 
 ## Auth & User Management
-- [ ] Fix pre-shared API key auth (env var `DMARC_API_KEY` not loading via `load_dotenv` — fix path resolution)
-- [ ] Per-user API keys: DB table, generate/list/revoke endpoints, hashed storage
-- [ ] Password change UI in frontend (backend endpoint `PUT /api/user/password` exists)
-- [ ] User management UI: edit user details, change roles
-- [ ] Admin: reset other users' passwords
+- [x] Fix pre-shared API key auth (env var `DMARC_API_KEY` supported in `backend/web/api.py`)
+- [x] Per-user API keys: DB table, generate/list/revoke endpoints, hashed storage
+- [x] API Key Management UI in Frontend (Users section in Settings)
+- [x] Password change UI in frontend (Profile section in Settings)
+- [x] User management UI: list, create, delete users (Admin section in Settings)
+- [x] User management UI: edit user details (role, email, etc.) for existing users
+- [x] Admin: reset other users' passwords UI
 
-## Future Enhancements
-- [ ] Email notifications for DMARC failures
-- [ ] Integration with external monitoring tools
-- [ ] Support for additional report formats (JSON, CSV)
-- [ ] Performance optimizations for large datasets
+## UI/UX Refinement
+- [x] Dark mode toggle (manual override)
+- [x] Mobile responsive layout audit and fixes
+- [x] Dashboard date presets (Last 7d, 30d, 90d, Month-to-date)
+- [x] Loading states/skeletons for charts and tables
 
----
-*This list is a living document. Items marked with `[x]` are completed. Items marked with `[ ]` are pending.*
+## Backend & Infrastructure
+- [x] Rate limiting for Auth and Upload endpoints
+- [x] Structured logging and error tracking
+- [x] Docker support (Dockerfile, docker-compose.yml)
+- [x] Automated CI pipeline (GitHub Actions)
+
+## Testing & Verification
+- [x] Manual testing of backend endpoints via repro scripts
+- [x] End-to-end tests (Playwright)
+- [x] Increased unit test coverage for `dmarc_lib`
+

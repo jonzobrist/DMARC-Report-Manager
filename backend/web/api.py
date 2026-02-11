@@ -8,6 +8,19 @@ from pydantic import BaseModel
 import jwt
 import datetime
 import bcrypt
+import logging
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("dmarc_manager")
 
 
 
@@ -37,7 +50,12 @@ async def lifespan(app: FastAPI):
     init_db()
     yield
 
+# Rate Limiting
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="DMARC Report Manager", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CONFIG
 UPLOAD_DIR = Path("backend/uploads")
@@ -143,7 +161,8 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
     return current_user
 
 @app.post("/api/login")
-async def login(req: LoginRequest):
+@limiter.limit("10/minute")
+async def login(req: LoginRequest, request: Request):
     user = get_user_by_username(req.username)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid username or password")
@@ -179,7 +198,8 @@ async def refresh_token(current_user: dict = Depends(get_current_user)):
     return {"access_token": token, "token_type": "bearer"}
 
 @app.put("/api/user/password")
-async def change_password(req: PasswordChange, current_user: dict = Depends(get_current_user)):
+@limiter.limit("5/minute")
+async def change_password(req: PasswordChange, request: Request, current_user: dict = Depends(get_current_user)):
     if not current_user.get('password_hash'):
         raise HTTPException(status_code=400, detail="Password change not supported for API key users")
     if not bcrypt.checkpw(req.current_password.encode('utf-8'), current_user['password_hash'].encode('utf-8')):
@@ -268,12 +288,12 @@ async def get_version():
 
 def process_single_file(file_path: Path):
     try:
-        print(f"Processing uploaded file: {file_path}")
+        logger.info(f"Processing uploaded file: {file_path}")
         data = parse_report(file_path)
         save_report(data)
-        print(f"Successfully processed {file_path}")
+        logger.info(f"Successfully processed {file_path}")
     except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+        logger.error(f"Error processing {file_path}: {e}")
 
 def _sanitize_filename(filename: str) -> str:
     safe_name = Path(filename).name
@@ -347,7 +367,9 @@ async def report_detail(id: str, current_user: dict = Depends(get_current_user))
     return report
 
 @app.post("/api/upload")
+@limiter.limit("20/minute")
 async def upload_files(
+    request: Request,
     files: List[UploadFile] = File(...),
     background_tasks: BackgroundTasks = None,
     current_user: dict = Depends(get_current_user),

@@ -122,7 +122,16 @@ const ReportsList = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="6" className="text-center p-4">Loading reports...</td></tr>
+                            Array.from({ length: 10 }).map((_, i) => (
+                                <tr key={i}>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '150px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '100px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '120px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '100px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '200px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '40px' }}></div></td>
+                                </tr>
+                            ))
                         ) : reports.length === 0 ? (
                             <tr><td colSpan="6" className="text-center p-4">No reports found.</td></tr>
                         ) : (

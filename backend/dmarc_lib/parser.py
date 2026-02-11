@@ -19,7 +19,7 @@ def _read_with_limit(stream, max_bytes: int) -> bytes:
         chunks.append(chunk)
     return b"".join(chunks)
 
-def parse_report(file_path):
+def parse_report(file_path, max_bytes: int = MAX_REPORT_BYTES):
     """
     Parses a DMARC report XML file (or .gz/.zip archive).
     Returns a dictionary with report metadata and records.
@@ -31,10 +31,10 @@ def parse_report(file_path):
     file_path_str = str(file_path)
     if file_path_str.endswith(".gz"):
         with gzip.open(file_path, "rb") as f:
-            content = _read_with_limit(f, MAX_REPORT_BYTES)
+            content = _read_with_limit(f, max_bytes)
     elif file_path_str.endswith(".xz"):
         with lzma.open(file_path, "rb") as f:
-            content = _read_with_limit(f, MAX_REPORT_BYTES)
+            content = _read_with_limit(f, max_bytes)
     elif file_path_str.endswith(".zip"):
         with zipfile.ZipFile(file_path, "r") as z:
             # Assume first XML file in zip is the report
@@ -46,15 +46,15 @@ def parse_report(file_path):
             if not xml_name:
                 raise ValueError("No XML file found in zip archive")
             info = z.getinfo(xml_name)
-            if info.file_size > MAX_REPORT_BYTES:
+            if info.file_size > max_bytes:
                 raise ValueError("Report exceeds maximum allowed size")
             with z.open(xml_name) as f:
-                content = _read_with_limit(f, MAX_REPORT_BYTES)
+                content = _read_with_limit(f, max_bytes)
     else:
-        if os.path.getsize(file_path_str) > MAX_REPORT_BYTES:
+        if os.path.getsize(file_path_str) > max_bytes:
             raise ValueError("Report exceeds maximum allowed size")
         with open(file_path, "rb") as f:
-            content = _read_with_limit(f, MAX_REPORT_BYTES)
+            content = _read_with_limit(f, max_bytes)
             
     if not content:
         raise ValueError("Could not read content from file")

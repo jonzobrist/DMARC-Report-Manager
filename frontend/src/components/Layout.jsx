@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, Globe, Settings, Shield,
-    ChevronLeft, ChevronRight, Database, LogIn, LogOut
+    ChevronLeft, ChevronRight, Database, LogIn, LogOut,
+    Sun, Moon, Menu, X
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useAuth } from '../context/AuthContext';
@@ -20,13 +21,34 @@ const Layout = ({ children }) => {
         return savedState === undefined ? true : savedState === 'true';
     });
 
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     const toggleSidebar = () => {
         const newState = !isSidebarOpen;
         setIsSidebarOpen(newState);
         Cookies.set('sidebar_state', newState, { expires: 365 });
     };
 
+    const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+
     const [version, setVersion] = useState('');
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const saved = Cookies.get('theme');
+        return saved === 'dark';
+    });
+
+    useEffect(() => {
+        if (isDarkMode) {
+            document.body.classList.add('dark-theme');
+            Cookies.set('theme', 'dark', { expires: 365 });
+        } else {
+            document.body.classList.remove('dark-theme');
+            Cookies.set('theme', 'light', { expires: 365 });
+        }
+    }, [isDarkMode]);
+
+    const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/api/version`)
@@ -39,16 +61,36 @@ const Layout = ({ children }) => {
         return location.pathname === path ? 'active' : '';
     };
 
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [location.pathname]);
+
 
     const userInitials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : '';
     const fullName = user ? `${user.first_name} ${user.last_name}` : '';
 
     return (
-        <div className={`layout-container ${!isSidebarOpen ? 'collapsed' : ''}`}>
-            <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
+        <div className={`layout-container ${!isSidebarOpen ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+            {/* Mobile Header */}
+            <header className="mobile-header">
+                <button onClick={toggleMobileMenu} className="btn-icon">
+                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+                <div className="mobile-logo">
+                    <img src="/logo-icon.png" alt="DMARC Logo" style={{ width: '24px', height: '24px' }} />
+                    <span className="logo-text">DMARC Mgr</span>
+                </div>
+                <div style={{ width: '24px' }}></div> {/* Spacer */}
+            </header>
+
+            {/* Backdrop for mobile */}
+            {isMobileMenuOpen && <div className="sidebar-backdrop" onClick={toggleMobileMenu}></div>}
+
+            <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-visible' : ''}`}>
                 <div className="sidebar-header">
                     <img src="/logo-icon.png" alt="DMARC Logo" className="logo-icon" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-                    {isSidebarOpen && <span className="logo-text">DMARC Mgr</span>}
+                    {(isSidebarOpen || isMobileMenuOpen) && <span className="logo-text">DMARC Mgr</span>}
                 </div>
 
                 <button className="sidebar-toggle" onClick={toggleSidebar}>
@@ -58,22 +100,22 @@ const Layout = ({ children }) => {
                 <nav className="sidebar-nav">
                     <Link to="/" className={`nav-item ${isActive('/')}`}>
                         <LayoutDashboard size={20} />
-                        {isSidebarOpen && <span className="nav-text">Dashboard</span>}
+                        {(isSidebarOpen || isMobileMenuOpen) && <span className="nav-text">Dashboard</span>}
                     </Link>
 
                     {user && (
                         <>
                             <Link to="/reports" className={`nav-item ${isActive('/reports')}`}>
                                 <FileText size={20} />
-                                {isSidebarOpen && <span className="nav-text">Reports</span>}
+                                {(isSidebarOpen || isMobileMenuOpen) && <span className="nav-text">Reports</span>}
                             </Link>
                             <Link to="/files" className={`nav-item ${isActive('/files')}`}>
                                 <Database size={20} />
-                                {isSidebarOpen && <span className="nav-text">Files</span>}
+                                {(isSidebarOpen || isMobileMenuOpen) && <span className="nav-text">Files</span>}
                             </Link>
                             <Link to="/domains" className={`nav-item ${isActive('/domains')}`}>
                                 <Globe size={20} />
-                                {isSidebarOpen && <span className="nav-text">Domains</span>}
+                                {(isSidebarOpen || isMobileMenuOpen) && <span className="nav-text">Domains</span>}
                             </Link>
                         </>
                     )}
@@ -81,7 +123,7 @@ const Layout = ({ children }) => {
                     <div className="nav-spacer"></div>
                     <Link to="/settings" className={`nav-item ${isActive('/settings')}`}>
                         <Settings size={20} />
-                        {isSidebarOpen && <span className="nav-text">Settings</span>}
+                        {(isSidebarOpen || isMobileMenuOpen) && <span className="nav-text">Settings</span>}
                     </Link>
                 </nav>
 
@@ -89,7 +131,7 @@ const Layout = ({ children }) => {
                     {user ? (
                         <div className="user-profile" style={{ cursor: 'default' }}>
                             <div className="avatar">{userInitials}</div>
-                            {isSidebarOpen && (
+                            {(isSidebarOpen || isMobileMenuOpen) && (
                                 <div className="user-info">
                                     <span className="user-name">{fullName}</span>
                                     <button onClick={logout} className="btn-text" style={{ fontSize: '0.75rem', padding: 0, justifyContent: 'flex-start', color: 'rgba(255,255,255,0.5)' }}>
@@ -104,7 +146,7 @@ const Layout = ({ children }) => {
                             <div className="avatar" style={{ background: 'rgba(255,255,255,0.1)' }}>
                                 <LogIn size={18} />
                             </div>
-                            {isSidebarOpen && (
+                            {(isSidebarOpen || isMobileMenuOpen) && (
                                 <div className="user-info">
                                     <span className="user-name">Guest</span>
                                     <span className="user-role" style={{ color: 'var(--primary)', fontWeight: 600 }}>Sign In</span>
@@ -114,11 +156,17 @@ const Layout = ({ children }) => {
                     )}
 
 
-                    {isSidebarOpen && (
-                        <div className="version-info">
-                            v{version || '0.0.0'}
-                        </div>
-                    )}
+                    <div className="version-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {(isSidebarOpen || isMobileMenuOpen) ? <span>v{version || '0.0.0'}</span> : <span></span>}
+                        <button
+                            onClick={toggleTheme}
+                            className="btn-text"
+                            style={{ color: 'rgba(255,255,255,0.3)', padding: '5px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }}
+                            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        >
+                            {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+                        </button>
+                    </div>
                 </div>
             </aside>
 

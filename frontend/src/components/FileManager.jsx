@@ -96,7 +96,15 @@ const FileManager = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="5" className="text-center p-4">Loading files...</td></tr>
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i}>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '250px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '80px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '150px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '100px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '40px' }}></div></td>
+                                </tr>
+                            ))
                         ) : files.length === 0 ? (
                             <tr><td colSpan="5" className="text-center p-4">No files uploaded yet.</td></tr>
                         ) : (

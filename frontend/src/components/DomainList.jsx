@@ -86,7 +86,17 @@ const DomainList = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="7" className="text-center p-4">Loading domains...</td></tr>
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <tr key={i}>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '150px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '50px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '80px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '120px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '100px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '100px' }}></div></td>
+                                    <td><div className="skeleton skeleton-text" style={{ width: '24px' }}></div></td>
+                                </tr>
+                            ))
                         ) : filteredDomains.length === 0 ? (
                             <tr><td colSpan="7" className="text-center p-4">No domains found.</td></tr>
                         ) : (

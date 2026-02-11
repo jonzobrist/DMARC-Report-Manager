@@ -47,7 +47,7 @@ const Dashboard = () => {
     };
 
     const fetchData = async () => {
-        // setLoading(true);
+        setLoading(true);
         try {
             // Convert dates to Unix Timestamp (seconds) for Backend
             // Add time to end date (23:59:59) to cover full day
@@ -116,7 +116,55 @@ const Dashboard = () => {
         return result;
     };
 
-    if (loading && !stats) return <div className="p-8">Loading dashboard...</div>;
+    const DashboardSkeleton = () => (
+        <div className="dashboard-content">
+            <header className="content-header">
+                <div>
+                    <div className="skeleton skeleton-title"></div>
+                    <div className="skeleton skeleton-text" style={{ width: '40%' }}></div>
+                </div>
+            </header>
+
+            <div className="stats-grid">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="stat-card">
+                        <div className="skeleton skeleton-circle"></div>
+                        <div className="stat-content" style={{ flex: 1 }}>
+                            <div className="skeleton skeleton-text" style={{ width: '80%', height: '1.5rem' }}></div>
+                            <div className="skeleton skeleton-text" style={{ width: '50%' }}></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="dashboard-grid">
+                <div className="chart-section">
+                    <div className="card">
+                        <div className="card-header"><div className="skeleton skeleton-text" style={{ width: '30%' }}></div></div>
+                        <div className="chart-wrapper"><div className="skeleton skeleton-box"></div></div>
+                    </div>
+                </div>
+                <div className="compliance-section">
+                    <div className="card">
+                        <div className="card-header"><div className="skeleton skeleton-text" style={{ width: '30%' }}></div></div>
+                        <div className="chart-wrapper"><div className="skeleton skeleton-box"></div></div>
+                    </div>
+                </div>
+                <div className="table-section">
+                    <div className="card">
+                        <div className="card-header"><div className="skeleton skeleton-text" style={{ width: '20%' }}></div></div>
+                        <div style={{ padding: '1.5rem' }}>
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <div key={i} className="skeleton skeleton-text" style={{ marginBottom: '1rem', height: '2rem' }}></div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (loading && !stats) return <DashboardSkeleton />;
     if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
 
     const { total_reports, total_volume, disposition_stats, recent_activity, volume_series } = stats || { total_reports: 0, total_volume: 0, disposition_stats: {}, recent_activity: [], volume_series: [] };
@@ -151,8 +199,13 @@ const Dashboard = () => {
                     <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', marginRight: '1rem' }}>
                         <button className="btn-sm" onClick={() => applyPreset(1)}>24h</button>
                         <button className="btn-sm" onClick={() => applyPreset(7)}>7d</button>
-                        <button className="btn-sm" onClick={() => applyPreset(14)}>14d</button>
-                        <button className="btn-sm" onClick={() => applyPreset(31)}>31d</button>
+                        <button className="btn-sm" onClick={() => applyPreset(30)}>30d</button>
+                        <button className="btn-sm" onClick={() => applyPreset(90)}>90d</button>
+                        <button className="btn-sm" onClick={() => {
+                            const now = new Date();
+                            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                            updateDateRange(start.toISOString().split('T')[0], now.toISOString().split('T')[0]);
+                        }}>MTD</button>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem', background: '#fff', padding: '0.25rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}>

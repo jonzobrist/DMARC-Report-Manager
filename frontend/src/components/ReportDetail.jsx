@@ -39,7 +39,37 @@ const ReportDetail = () => {
         fetchReport();
     }, [id]);
 
-    if (loading) return <div className="p-8">Loading report details...</div>;
+    const ReportDetailSkeleton = () => (
+        <div className="report-detail-container">
+            <header className="detail-header">
+                <div className="skeleton skeleton-text" style={{ width: '150px' }}></div>
+                <div className="report-title">
+                    <div className="skeleton skeleton-title"></div>
+                    <div className="skeleton skeleton-text" style={{ width: '300px' }}></div>
+                </div>
+            </header>
+            <div className="detail-grid">
+                <div className="card">
+                    <div className="card-header"><div className="skeleton skeleton-text" style={{ width: '50%' }}></div></div>
+                    <div className="card-body policy-grid">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="skeleton skeleton-text" style={{ height: '3rem' }}></div>
+                        ))}
+                    </div>
+                </div>
+                <div className="card full-width">
+                    <div className="card-header"><div className="skeleton skeleton-text" style={{ width: '30%' }}></div></div>
+                    <div style={{ padding: '1rem' }}>
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="skeleton skeleton-text" style={{ height: '2rem', marginBottom: '1rem' }}></div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (loading) return <ReportDetailSkeleton />;
     if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
     if (!report) return null;
 
@@ -91,7 +121,8 @@ const ReportDetail = () => {
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    <th>Source IP</th>
+                                    <th>Source IP & Hostname</th>
+                                    <th>Origin</th>
                                     <th>Count</th>
                                     <th>Disposition</th>
                                     <th>DKIM</th>
@@ -101,7 +132,33 @@ const ReportDetail = () => {
                             <tbody>
                                 {report.records.map((record, index) => (
                                     <tr key={index}>
-                                        <td className="font-medium font-mono">{record.source_ip}</td>
+                                        <td>
+                                            <div className="font-mono font-medium">{record.source_ip}</div>
+                                            {record.enrichment?.rdns && (
+                                                <div className="text-muted" style={{ fontSize: '0.7rem', wordBreak: 'break-all', marginTop: '2px' }}>
+                                                    {record.enrichment.rdns}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {record.enrichment?.country_code && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <span className="status-badge" style={{ padding: '2px 4px', fontSize: '0.7rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', color: 'var(--text-color)' }}>
+                                                        {record.enrichment.country_code}
+                                                    </span>
+                                                    {record.enrichment.country_name && (
+                                                        <span className="text-xs" title={record.enrichment.country_name}>
+                                                            {record.enrichment.country_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {record.enrichment?.asn_name && (
+                                                <div className="text-muted" style={{ fontSize: '0.7rem', marginTop: '2px' }} title={`AS${record.enrichment.asn}`}>
+                                                    {record.enrichment.asn_name}
+                                                </div>
+                                            )}
+                                        </td>
                                         <td>{record.count}</td>
                                         <td>
                                             <span className={`status-badge ${(!record.disposition || record.disposition === 'none') ? 'pass' : 'fail'}`}>

@@ -76,9 +76,23 @@ def init_db():
         )
     ''')
     
-    # Create index for faster key lookups
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS ip_enrichment (
+            ip TEXT PRIMARY KEY,
+            rdns TEXT,
+            country_code TEXT,
+            country_name TEXT,
+            city TEXT,
+            asn INTEGER,
+            asn_name TEXT,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Create indexes for faster key lookups
     c.execute('CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)')
     c.execute('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_ip_enrichment_updated ON ip_enrichment(last_updated)')
     
     conn.commit()
     _seed_default_user(conn)

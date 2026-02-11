@@ -42,8 +42,8 @@ from backend.dmarc_lib.db import (
     create_api_key, get_api_keys_for_user, delete_api_key,
     get_user_by_api_key, get_api_key_owner
 )
-
-
+from backend.dmarc_lib.enrichment import batch_enrich_ips
+import backend.web.config as config
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -364,6 +364,14 @@ async def report_detail(id: str, current_user: dict = Depends(get_current_user))
     report = get_report_detail(id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
+    
+    # Enrichment
+    ips = [r['source_ip'] for r in report['records']]
+    if ips:
+        enrichment = await batch_enrich_ips(ips)
+        for r in report['records']:
+            r['enrichment'] = enrichment.get(r['source_ip'])
+            
     return report
 
 @app.post("/api/upload")

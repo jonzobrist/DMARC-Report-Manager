@@ -11,10 +11,10 @@
 - [x] Implement authentication & authorization (Full Auth)
 
 - [x] Write comprehensive unit tests for parsing and API
-- [ ] CI pipeline for automated testing
-- [ ] Security + API hardening
-- [ ] Data integrity + DB cleanup
-- [ ] Backend reliability polish
+- [x] CI pipeline for automated testing
+- [x] Security + API hardening
+- [x] Data integrity + DB cleanup
+- [x] Backend reliability polish
 
 
 ## Frontend
@@ -109,3 +109,9 @@
 - [x] End-to-end tests (Playwright)
 - [x] Increased unit test coverage for `dmarc_lib`
 
+
+## vNext Roadmap
+- [x] IP Enrichment: GeoIP and Reverse DNS lookups for source IPs
+- [ ] PDF Export: Generate summary reports in PDF format
+- [ ] Scheduled Alerts: Detect and notify on high failure spikes (Email/Slack)
+- [ ] Email Integration: Auto-fetch reports via IMAP from a dedicated mailbox

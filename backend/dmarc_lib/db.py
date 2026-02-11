@@ -5,6 +5,7 @@ import secrets
 import hashlib
 from pathlib import Path
 import datetime
+from typing import Any
 
 DB_PATH = os.environ.get('DB_PATH', 'dmarc_reports.db')
 
@@ -86,6 +87,13 @@ def init_db():
             asn INTEGER,
             asn_name TEXT,
             last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
         )
     ''')
     
@@ -637,3 +645,24 @@ def get_api_key_owner(key_id: int) -> int | None:
     row = c.fetchone()
     conn.close()
     return row['user_id'] if row else None
+
+def get_setting(key: str, default: Any = None) -> Any:
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        try:
+            return json.loads(row[0])
+        except:
+            return row[0]
+    return default
+
+def set_setting(key: str, value: Any):
+    conn = get_db()
+    c = conn.cursor()
+    val_str = json.dumps(value)
+    c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, val_str))
+    conn.commit()
+    conn.close()

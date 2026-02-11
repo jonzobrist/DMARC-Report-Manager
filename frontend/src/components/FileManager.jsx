@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, FileText, Upload, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Trash2, FileText, Upload, RefreshCw, AlertTriangle, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 import ImportModal from './ImportModal';
@@ -54,6 +54,25 @@ const FileManager = () => {
         }
     };
 
+    const [fetchingEmail, setFetchingEmail] = useState(false);
+
+    const handleFetchEmail = async () => {
+        if (!user) return;
+        setFetchingEmail(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/fetch-email`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+            const data = await res.json();
+            alert(data.message);
+            fetchFiles();
+        } catch (err) {
+            alert("Failed to fetch emails");
+        }
+        setFetchingEmail(false);
+    };
+
     const formatSize = (bytes) => {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -70,6 +89,10 @@ const FileManager = () => {
                     <p>Manage uploaded DMARC report files</p>
                 </div>
                 <div className="header-actions">
+                    <button className="btn-secondary" onClick={handleFetchEmail} disabled={fetchingEmail} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Mail size={18} />
+                        {fetchingEmail ? 'Fetching...' : 'Fetch from Email'}
+                    </button>
                     <button className="btn-secondary" onClick={fetchFiles}><RefreshCw size={18} /></button>
                     <button className="btn-danger-outline" onClick={() => setIsFlushOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <Trash2 size={18} />
@@ -77,7 +100,7 @@ const FileManager = () => {
                     </button>
                     <button className="btn-primary" onClick={() => setIsUploadOpen(true)}>
                         <Upload size={18} style={{ marginRight: '0.5rem' }} />
-                        Upload Reports
+                        Upload
                     </button>
                 </div>
             </header>
@@ -146,7 +169,7 @@ const FileManager = () => {
                 onClose={() => setIsUploadOpen(false)}
                 onUploadComplete={fetchFiles}
             />
-        </div>
+        </div >
     );
 };
 

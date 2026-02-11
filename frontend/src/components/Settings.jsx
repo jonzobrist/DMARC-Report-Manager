@@ -1,8 +1,143 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Save, CheckCircle, Trash2, UserPlus, Shield, Lock, Key } from 'lucide-react';
+import { User, Mail, Phone, Save, CheckCircle, Trash2, UserPlus, Shield, Lock, Key, Bell, Server, Globe as GlobeIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
+
+const GlobalSettings = ({ token }) => {
+    const [settings, setSettings] = useState({
+        slack_webhook_url: '',
+        imap_host: '',
+        imap_port: 993,
+        imap_user: '',
+        imap_pass: '',
+        imap_use_ssl: true
+    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [msg, setMsg] = useState(null);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/settings`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setSettings(data);
+                }
+            } catch (err) { console.error(err); }
+            setLoading(false);
+        };
+        fetchSettings();
+    }, [token]);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setMsg(null);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/settings`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(settings)
+            });
+            if (res.ok) setMsg({ type: 'success', text: 'Global settings saved!' });
+            else setMsg({ type: 'error', text: 'Failed to save settings' });
+        } catch (err) { setMsg({ type: 'error', text: 'Failed to save settings' }); }
+        setSaving(false);
+    };
+
+    if (loading) return null;
+
+    return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
+            <div className="card">
+                <div className="card-header">
+                    <h3>Notification Settings</h3>
+                </div>
+                <div className="chart-wrapper" style={{ height: 'auto', padding: '1.5rem 2.5rem' }}>
+                    <p className="text-muted" style={{ marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                        Configure alerts for high failure rates. Alerts are triggered when a report shows &gt;25% failure (min 10 emails).
+                    </p>
+                    <div className="form-row">
+                        <label className="form-label">Slack Webhook URL</label>
+                        <div className="input-container">
+                            <Bell size={16} className="input-icon" />
+                            <input
+                                type="url"
+                                value={settings.slack_webhook_url}
+                                onChange={(e) => setSettings({ ...settings, slack_webhook_url: e.target.value })}
+                                placeholder="https://hooks.slack.com/services/..."
+                                className="input-with-icon"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="card">
+                <div className="card-header">
+                    <h3>Email Integration (IMAP)</h3>
+                </div>
+                <div className="chart-wrapper" style={{ height: 'auto', padding: '1.5rem 2.5rem' }}>
+                    <div className="form-row">
+                        <label className="form-label">IMAP Host</label>
+                        <div className="input-container">
+                            <GlobeIcon size={16} className="input-icon" />
+                            <input
+                                type="text"
+                                value={settings.imap_host}
+                                onChange={(e) => setSettings({ ...settings, imap_host: e.target.value })}
+                                placeholder="imap.gmail.com"
+                                className="input-with-icon"
+                            />
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <label className="form-label">IMAP User</label>
+                        <div className="input-container">
+                            <Mail size={16} className="input-icon" />
+                            <input
+                                type="text"
+                                value={settings.imap_user}
+                                onChange={(e) => setSettings({ ...settings, imap_user: e.target.value })}
+                                placeholder="dmarc@example.com"
+                                className="input-with-icon"
+                            />
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <label className="form-label">IMAP Password</label>
+                        <div className="input-container">
+                            <Lock size={16} className="input-icon" />
+                            <input
+                                type="password"
+                                value={settings.imap_pass}
+                                onChange={(e) => setSettings({ ...settings, imap_pass: e.target.value })}
+                                placeholder="••••••••"
+                                className="input-with-icon"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="card" style={{ gridColumn: 'span 2' }}>
+                <div style={{ padding: '1.5rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        {msg && <span className={`text-${msg.type === 'success' ? 'success' : 'danger'}`} style={{ fontSize: '0.875rem' }}>{msg.text}</span>}
+                    </div>
+                    <button className="btn-primary" onClick={handleSave} disabled={saving}>
+                        <Save size={18} style={{ marginRight: '0.5rem' }} />
+                        {saving ? 'Saving...' : 'Save Global Settings'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const UserManagement = ({ token }) => {
     const [users, setUsers] = useState([]);
@@ -563,6 +698,8 @@ const Settings = () => {
             </div>
 
             <ApiKeyManagement token={user.token} />
+
+            {isAdmin && <GlobalSettings token={user.token} />}
 
             {isAdmin && <UserManagement token={user.token} />}
 

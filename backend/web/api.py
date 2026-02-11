@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File, Depends, Request
+from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File, Depends, Request, Response
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -40,9 +40,13 @@ from backend.dmarc_lib.db import (
     get_user_profile, update_user_profile, get_user_by_username,
     list_users, create_user, delete_user,
     create_api_key, get_api_keys_for_user, delete_api_key,
-    get_user_by_api_key, get_api_key_owner
+    get_user_by_api_key, get_api_key_owner,
+    get_setting, set_setting
 )
 from backend.dmarc_lib.enrichment import batch_enrich_ips
+from backend.dmarc_lib.pdf_gen import generate_summary_pdf
+from backend.dmarc_lib.alerts import check_for_spikes
+from backend.dmarc_lib.email_fetch import fetch_dmarc_reports
 import backend.web.config as config
 
 @asynccontextmanager
@@ -286,12 +290,14 @@ async def get_version():
         return {"version": "0.0.0"}
 
 
-def process_single_file(file_path: Path):
+async def process_single_file(file_path: Path):
     try:
         logger.info(f"Processing uploaded file: {file_path}")
         data = parse_report(file_path)
-        save_report(data)
+        report_id = save_report(data)
         logger.info(f"Successfully processed {file_path}")
+        # Check for alerts
+        await check_for_spikes(report_id)
     except Exception as e:
         logger.error(f"Error processing {file_path}: {e}")
 
@@ -355,6 +361,32 @@ async def stats(start: Optional[int] = None, end: Optional[int] = None, request:
     
     return data
 
+@app.get("/api/stats/pdf")
+async def stats_pdf(start: Optional[int] = None, end: Optional[int] = None, current_user: dict = Depends(get_current_user)):
+    data = get_stats(start_date=start, end_date=end)
+    
+    date_range = "All Time"
+    if start and end:
+        s = datetime.datetime.fromtimestamp(start).strftime('%Y-%m-%d')
+        e = datetime.datetime.fromtimestamp(end).strftime('%Y-%m-%d')
+        date_range = f"{s} to {e}"
+    elif start:
+        s = datetime.datetime.fromtimestamp(start).strftime('%Y-%m-%d')
+        date_range = f"Since {s}"
+    elif end:
+        e = datetime.datetime.fromtimestamp(end).strftime('%Y-%m-%d')
+        date_range = f"Until {e}"
+        
+    pdf_bytes = generate_summary_pdf(data, date_range)
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=dmarc-summary-{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
+        }
+    )
+
 @app.get("/api/reports")
 async def reports_list(page: int = 1, limit: int = 50, search: Optional[str] = None, domain: Optional[str] = None, current_user: dict = Depends(get_current_user)):
     return get_reports_list(page=page, page_size=limit, search=search, domain=domain)
@@ -393,10 +425,23 @@ async def upload_files(
             if background_tasks:
                 background_tasks.add_task(process_single_file, file_path)
             else:
-                process_single_file(file_path)
+                await process_single_file(file_path)
         except Exception as e:
             return JSONResponse(status_code=500, content={"message": f"Failed to save {safe_name}"})
     return {"message": f"Uploaded {len(uploaded_files)} files", "files": uploaded_files}
+
+@app.post("/api/fetch-email")
+async def fetch_email_reports(background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Trigger IMAP fetch and process new reports in background."""
+    new_files = fetch_dmarc_reports()
+    if not new_files:
+        return {"message": "No new reports found in email."}
+    
+    for filename in new_files:
+        file_path = UPLOAD_DIR / filename
+        background_tasks.add_task(process_single_file, file_path)
+    
+    return {"message": f"Found {len(new_files)} new reports. Processing in background.", "files": new_files}
 
 @app.delete("/api/reports")
 async def delete_reports_endpoint(start: Optional[int] = None, end: Optional[int] = None, domain: Optional[str] = None, org_name: Optional[str] = None, days: Optional[int] = None, current_user: dict = Depends(get_current_user)):
@@ -455,7 +500,40 @@ async def update_user(id: int, user: UserUpdate, admin: dict = Depends(get_admin
 
 @app.delete("/api/users/{id}")
 async def remove_user(id: int, admin: dict = Depends(get_admin_user)):
-    if id == admin['id']:
-        raise HTTPException(status_code=400, detail="Cannot delete yourself")
     delete_user(id)
     return {"message": "User deleted successfully"}
+
+class SettingsUpdate(BaseModel):
+    slack_webhook_url: Optional[str] = None
+    imap_host: Optional[str] = None
+    imap_port: Optional[int] = None
+    imap_user: Optional[str] = None
+    imap_pass: Optional[str] = None
+    imap_use_ssl: Optional[bool] = None
+
+@app.get("/api/settings")
+async def get_all_settings(admin: dict = Depends(get_admin_user)):
+    return {
+        "slack_webhook_url": get_setting("slack_webhook_url", ""),
+        "imap_host": get_setting("imap_host", ""),
+        "imap_port": get_setting("imap_port", 993),
+        "imap_user": get_setting("imap_user", ""),
+        "imap_pass": get_setting("imap_pass", ""),
+        "imap_use_ssl": get_setting("imap_use_ssl", True)
+    }
+
+@app.put("/api/settings")
+async def update_settings(settings: SettingsUpdate, admin: dict = Depends(get_admin_user)):
+    if settings.slack_webhook_url is not None:
+        set_setting("slack_webhook_url", settings.slack_webhook_url)
+    if settings.imap_host is not None:
+        set_setting("imap_host", settings.imap_host)
+    if settings.imap_port is not None:
+        set_setting("imap_port", settings.imap_port)
+    if settings.imap_user is not None:
+        set_setting("imap_user", settings.imap_user)
+    if settings.imap_pass is not None:
+        set_setting("imap_pass", settings.imap_pass)
+    if settings.imap_use_ssl is not None:
+        set_setting("imap_use_ssl", settings.imap_use_ssl)
+    return {"message": "Settings updated"}

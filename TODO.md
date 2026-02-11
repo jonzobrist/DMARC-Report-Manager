@@ -112,6 +112,6 @@
 
 ## vNext Roadmap
 - [x] IP Enrichment: GeoIP and Reverse DNS lookups for source IPs
-- [ ] PDF Export: Generate summary reports in PDF format
-- [ ] Scheduled Alerts: Detect and notify on high failure spikes (Email/Slack)
-- [ ] Email Integration: Auto-fetch reports via IMAP from a dedicated mailbox
+- [x] PDF Export: Generate summary reports in PDF format
+- [x] Scheduled Alerts: Detect and notify on high failure spikes (Email/Slack)
+- [x] Email Integration: Auto-fetch reports via IMAP from a dedicated mailbox

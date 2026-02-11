@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { ShieldCheck, ShieldAlert, Mail, ArrowUpRight, ArrowDownRight, MoreHorizontal, Database, Calendar, Upload } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Mail, ArrowUpRight, ArrowDownRight, MoreHorizontal, Database, Calendar, Upload, FileDown } from 'lucide-react';
 import Cookies from 'js-cookie';
 import ImportModal from './ImportModal';
 import { useAuth } from '../context/AuthContext';
@@ -116,6 +116,32 @@ const Dashboard = () => {
         return result;
     };
 
+    const handleExportPDF = async () => {
+        if (!user) return;
+        try {
+            const startTs = Math.floor(new Date(dateRange.start).getTime() / 1000);
+            const endTs = Math.floor(new Date(dateRange.end).getTime() / 1000 + 86399); // End of day
+
+            const res = await fetch(`${API_BASE_URL}/api/stats/pdf?start=${startTs}&end=${endTs}`, {
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+
+            if (!res.ok) throw new Error("Failed to generate PDF");
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dmarc-summary-${dateRange.start}-to-${dateRange.end}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (err) {
+            console.error(err);
+            alert("Export failed");
+        }
+    };
+
     const DashboardSkeleton = () => (
         <div className="dashboard-content">
             <header className="content-header">
@@ -226,9 +252,13 @@ const Dashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn-secondary" onClick={handleExportPDF} title="Download PDF Summary">
+                            <FileDown size={18} style={{ marginRight: '0.5rem' }} />
+                            Export PDF
+                        </button>
                         <button className="btn-primary" onClick={() => setIsUploadOpen(true)}>
                             <Upload size={18} style={{ marginRight: '0.5rem' }} />
-                            Import
+                            Upload
                         </button>
                         <button className="btn-primary" onClick={fetchData}>Refresh</button>
                     </div>

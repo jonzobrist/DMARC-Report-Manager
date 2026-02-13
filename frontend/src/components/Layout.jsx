@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, Globe, Settings, Shield,
     ChevronLeft, ChevronRight, Database, LogIn, LogOut,
-    Sun, Moon, Menu, X
+    Sun, Moon, Menu, X, FileDown
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useAuth } from '../context/AuthContext';
@@ -70,6 +70,37 @@ const Layout = ({ children }) => {
     const userInitials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : '';
     const fullName = user ? `${user.first_name} ${user.last_name}` : '';
 
+    const handleGlobalExport = async () => {
+        if (!user) return;
+        try {
+            // Default to last 30 days for global export
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - 30);
+
+            const startTs = Math.floor(start.getTime() / 1000);
+            const endTs = Math.floor(end.getTime() / 1000 + 86399);
+
+            const res = await fetch(`${API_BASE_URL}/api/stats/pdf?start=${startTs}&end=${endTs}`, {
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+
+            if (!res.ok) throw new Error("Failed to generate PDF");
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dmarc-summary-last30days.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (err) {
+            console.error(err);
+            alert("Export failed");
+        }
+    };
+
     return (
         <div className={`layout-container ${!isSidebarOpen ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             {/* Mobile Header */}
@@ -128,6 +159,16 @@ const Layout = ({ children }) => {
                 </nav>
 
                 <div className="sidebar-footer">
+                    {user && (
+                        <button
+                            className="nav-item btn-text"
+                            style={{ width: '100%', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                            onClick={handleGlobalExport}
+                        >
+                            <FileDown size={20} />
+                            {(isSidebarOpen || isMobileMenuOpen) && <span className="nav-text">Export Summary</span>}
+                        </button>
+                    )}
                     {user ? (
                         <div className="user-profile" style={{ cursor: 'default' }}>
                             <div className="avatar">{userInitials}</div>

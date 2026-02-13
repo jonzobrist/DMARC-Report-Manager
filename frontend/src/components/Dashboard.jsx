@@ -259,7 +259,7 @@ const Dashboard = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn-secondary" onClick={handleExportPDF} title="Download PDF Summary">
+                        <button className="btn-primary" onClick={handleExportPDF} title="Download PDF Summary">
                             <FileDown size={18} style={{ marginRight: '0.5rem' }} />
                             Export PDF
                         </button>

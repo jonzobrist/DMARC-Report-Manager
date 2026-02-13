@@ -238,6 +238,8 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
 .content-header h1 {
@@ -251,6 +253,13 @@ body {
 .content-header p {
   color: var(--text-muted);
   margin: 0.5rem 0 0 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
